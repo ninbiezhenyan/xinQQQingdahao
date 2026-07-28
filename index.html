@@ -37,6 +37,7 @@
     color: #FF8A90;
     letter-spacing: 3px;
     text-align: center;
+    white-space: pre-line;
     text-shadow: 0 2px 8px rgba(255,138,144,0.12);
     padding: 0 24px;
     line-height: 1.5;
@@ -104,6 +105,64 @@
     color: #fff;
   }
 
+  /* ===== 分类目录触发器 — 卡片左上 ===== */
+  .cat-trigger {
+    position: fixed;
+    top: 100px;
+    left: 12px;
+    z-index: 96;
+    width: 22px;
+    padding: 5px 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64B5F6;
+    background: #fff;
+    border-radius: 8px;
+    text-align: center;
+    line-height: 1.35;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border: 1px solid #E8E8E8;
+    letter-spacing: 0;
+  }
+  /* ===== 分类弹出面板 ===== */
+  .cat-panel {
+    position: fixed;
+    top: 98px;
+    left: 40px;
+    z-index: 95;
+    display: none;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 4px 8px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    border: 1px solid #E8E8E8;
+    max-width: calc(100vw - 54px);
+    transition: opacity 0.15s ease;
+  }
+  .cat-panel.show { display: flex; }
+  .cat-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 2px;
+    cursor: pointer;
+    color: #64B5F6;
+    border: none;
+    background: transparent;
+    white-space: nowrap;
+    transition: color 0.15s;
+  }
+  .cat-tag.active { color: #1976D2; }
+  .cat-sep {
+    color: #BBDEFB;
+    font-size: 10px;
+    padding: 0 1px;
+    pointer-events: none;
+    user-select: none;
+  }
+
   /* ===== 主舞台 ===== */
   .stage {
     position: absolute;
@@ -121,9 +180,9 @@
   .card-wrapper {
     width: 100%;
     max-width: 360px;
-    height: 50vh;
-    max-height: 420px;
-    min-height: 280px;
+    height: 55vh;
+    max-height: 520px;
+    min-height: 340px;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -247,26 +306,39 @@
     color: #fff; display: inline-flex; align-items: center; justify-content: center;
     font-size: 10px; font-weight: 700; flex-shrink: 0;
   }
+  .shop-rating { font-size: 12px; color: #FF9800; letter-spacing: 2px; margin-top: 2px; }
   .shop-features { display: flex; flex-wrap: wrap; gap: 5px; }
   .shop-feat {
-    font-size: 11px; color: #888; background: #FFF0F2;
+    font-size: 11px; color: #1E88E5; background: #E3F2FD;
     padding: 2px 8px; border-radius: 10px;
   }
   .shop-addr { font-size: 12px; color: #AAA; line-height: 1.5; }
   .shop-dishes {
     display: flex; flex-wrap: wrap; gap: 5px;
-    margin-top: auto; padding-top: 10px;
   }
   .dish {
     font-size: 12px; padding: 3px 9px; border-radius: 12px;
-    background: #FFEFF1; color: #996666;
+    background: #F5F5F5; color: #888;
   }
-  .dish.hot { background: #FFF0F0; color: #FF4458; font-weight: 600; }
+  .dish.hot { background: #E3F2FD; color: #1565C0; font-weight: 600; }
+  .shop-meta {
+    display: flex; align-items: center; gap: 9px;
+    font-size: 12px; color: #888; flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .shop-meta .recdish-icon { font-size: 13px; flex-shrink: 0; }
+  .shop-meta .recdish-label { color: #FF4458; font-weight: 600; }
+  .shop-meta .meta-sep { color: #DDD; }
+  .shop-meta .dy-icon { font-size: 13px; color: #FE2C55; flex-shrink: 0; }
+  .shop-meta .dy-score { color: #FE2C55; font-weight: 700; }
+  .shop-meta .dp-icon { font-size: 13px; color: #FF9800; flex-shrink: 0; }
+  .shop-meta .dp-score { color: #FF6B00; font-weight: 700; }
 
   .tag-blue   { background: #039BE5 !important; }
   .tag-red    { background: #FF6B6B !important; }
   .tag-orange { background: #FF9800 !important; }
   .tag-cyan   { background: #00ACC1 !important; }
+  .tag-green  { background: #43A047 !important; }
 
   /* ===== 提示语 ===== */
   .toast {
@@ -373,6 +445,10 @@
   <button class="mode-btn" data-mode="suixin">随心版</button>
 </div>
 
+<!-- 分类目录触发器 — 卡片左上 -->
+<div class="cat-trigger" id="catTrigger">目<br>录</div>
+<div class="cat-panel" id="catPanel"></div>
+
 <!-- 卡片舞台 -->
 <div class="stage" id="stage">
   <div class="card-wrapper" id="wrapper">
@@ -397,63 +473,183 @@ const slides = [
   { type:'category', icon:'🦐', name:'海鲜菜', desc:'新鲜直达 原汁原味<br>金桥商圈品质之选', count:'1家店' },
   { type:'restaurant', icon:'🦐', name:'威海小海鲜', branch:'金高路店', tag:'海鲜', tagClass:'tag-blue',
     photo:'images/shop_1.jpg',
-    price:123, recommender:'联名推荐', avatar:'联',
+    price:123, recommender:'联名推荐', avatar:'联', douyin:'4.8', dianping:'4.3',
     addr:'浦东新区金高路2107号（金桥商圈）',
     mapQuery:'浦东新区金高路2107号威海小海鲜',
     features:['新鲜直达','家庭聚餐','性价比高'],
+    rating:5,
     dishes:[
-      {name:'鸟贝',hl:1},{name:'清蒸海鲜（招牌）',hl:1},{name:'凉拌海肠',hl:1},
-      {name:'舌头鱼'},{name:'白灼虾'},{name:'辣炒蛤蜊'},{name:'海鲜拼盘'}
+      {name:'鸟贝',icon:'🐚',hl:1},{name:'清蒸海鲜（招牌）',icon:'🦐',hl:1},{name:'凉拌海肠',icon:'🥒',hl:1},
+      {name:'舌头鱼',icon:'🐟'},{name:'白灼虾',icon:'🦐'},{name:'辣炒蛤蜊',icon:'🌶️'},{name:'海鲜拼盘',icon:'🦀'}
     ]
   },
   { type:'category', icon:'🍲', name:'东北菜', desc:'锅气十足 量大管饱<br>凌河路·上川路一带', count:'3家店' },
   { type:'restaurant', icon:'🍲', name:'龙江顺天福', branch:'金桥店', tag:'东北菜', tagClass:'tag-red',
     photo:'images/shop_2.jpg',
-    price:80, recommender:'申小红', avatar:'申',
+    price:80, recommender:'申小红', avatar:'申', douyin:'4.7', dianping:'4.5',
     addr:'浦东凌河路（丰华高中东北侧）🚇12号线杨高北路',
     mapQuery:'龙江顺天福东北菜凌河路店',
     features:['09:30-24:00','东北地名包厢'],
+    rating:5,
     dishes:[
-      {name:'锅包肉 ¥38',hl:1},{name:'小鸡炖蘑菇 ¥58'},{name:'猪肉炖粉条 ¥52'},
-      {name:'韭菜盒子 ¥26'},{name:'地三鲜 ¥24'},{name:'鹅肉蒸饺',hl:1}
+      {name:'锅包肉 ¥38',icon:'🥩',hl:1},{name:'小鸡炖蘑菇 ¥58',icon:'🍄'},{name:'猪肉炖粉条 ¥52',icon:'🍜'},
+      {name:'韭菜盒子 ¥26',icon:'🥟'},{name:'地三鲜 ¥24',icon:'🥔'},{name:'鹅肉蒸饺',icon:'🥟',hl:1}
     ]
   },
   { type:'restaurant', icon:'🥘', name:'地锅岁月', branch:'凌河路店', tag:'东北菜', tagClass:'tag-red',
     photo:'images/shop_3.jpg',
-    price:91, recommender:'申小红', avatar:'申',
+    price:91, recommender:'申小红', avatar:'申', douyin:'4.9',
     addr:'浦东新区凌河路576号',
     mapQuery:'浦东新区凌河路576号地锅岁月',
     features:['无预制菜','现点现烧','上海地方菜好评榜'],
+    rating:5,
     dishes:[
-      {name:'地锅鸡（招牌）',hl:1},{name:'啤酒鸡排骨双人餐 ¥99',hl:1},{name:'贴饼子'},
-      {name:'+牛蛙'},{name:'+牛肚'},{name:'+牛肉'}
+      {name:'地锅鸡（招牌）',icon:'🐔',hl:1},{name:'啤酒鸡排骨双人餐 ¥99',icon:'🍺',hl:1},{name:'贴饼子',icon:'🫓'},
+      {name:'+牛蛙',icon:'🐸'},{name:'+牛肚',icon:'🐂'},{name:'+牛肉',icon:'🥩'}
     ]
   },
   { type:'restaurant', icon:'🔥', name:'薛记·传奇大锅台', branch:'上川路店', tag:'东北菜', tagClass:'tag-red',
     photo:'images/shop_4.jpg',
-    price:106, recommender:'四五六七八次', avatar:'四',
+    price:106, recommender:'四五六七八次', avatar:'四', douyin:'4.8', dianping:'4.2',
     addr:'浦东新区曹路镇上川路2257号',
     mapQuery:'浦东新区曹路镇上川路2257号传奇大锅台',
     features:['10:00-02:00','现场选肉现炒','9店连锁'],
+    rating:5,
     dishes:[
-      {name:'招牌地锅鸡（现炒）',hl:1},{name:'地锅鸡双人餐 ¥99',hl:1},{name:'排骨锅'},{name:'贴饼子'}
+      {name:'招牌地锅鸡（现炒）',icon:'🐔',hl:1},{name:'地锅鸡双人餐 ¥99',icon:'🍗',hl:1},{name:'排骨锅',icon:'🍖'},{name:'贴饼子',icon:'🫓'}
     ]
   },
-  { type:'category', icon:'🐂', name:'火锅菜', desc:'牛骨慢熬 原汤醇厚<br>张江街边烟火小馆', count:'1家店' },
+  { type:'category', icon:'🐂', name:'火锅菜', desc:'牛骨慢熬 原汤醇厚<br>张江街边烟火小馆', count:'2家店' },
   { type:'restaurant', icon:'🐂', name:'大成牛肉汤馆', branch:'张江店', tag:'牛肉汤', tagClass:'tag-cyan',
     photo:'images/shop_5.jpg',
-    price:65, recommender:'申小红', avatar:'申',
+    price:65, recommender:'申小红', avatar:'申', dianping:'4.4',
     addr:'浦东新区张江镇百业路232号一层',
     mapQuery:'浦东新区张江镇百业路232号大成牛肉汤馆',
     features:['牛骨慢熬原汤','街边烟火小店','价格实惠'],
+    rating:5,
     dishes:[
-      {name:'牛骨原汤（招牌）',hl:1},{name:'牛肋排锅（灵魂）',hl:1},{name:'牛肉丸'},{name:'锅贴'},{name:'烧饼'}
+      {name:'牛骨原汤（招牌）',icon:'🍖',hl:1},{name:'牛肋排锅（灵魂）',icon:'🥩',hl:1},{name:'牛肉丸',icon:'🧆'},{name:'锅贴',icon:'🥟'},{name:'烧饼',icon:'🫓'}
+    ]
+  },
+  { type:'restaurant', icon:'🍲', name:'大宝口福·牛羊肉火锅', branch:'张江店', tag:'火锅', tagClass:'tag-orange',
+    photo:'images/shop_7.jpg',
+    price:109, recommender:'申小鸿', avatar:'申', dianping:'4.8',
+    addr:'浦东新区祖冲之路2305号1楼（天之骄子生活新天地）',
+    mapQuery:'浦东新区祖冲之路2305号大宝口福牛羊肉火锅',
+    features:['牛羊肉锅','秘制羊棒骨','龙虾烧烤'],
+    rating:5,
+    dishes:[
+      {name:'牛羊肉锅（招牌）',icon:'🥘',hl:1},{name:'秘制羊棒骨',icon:'🍖',hl:1},{name:'蒜蓉小龙虾',icon:'🦞',hl:1},{name:'羊肉串',icon:'🍢'},{name:'烧饼',icon:'🫓'}
+    ]
+  },
+  { type:'category', icon:'🍳', name:'家常菜', desc:'曹路米其林 大学食堂<br>民雪路烟火小馆', count:'1家店' },
+  { type:'restaurant', icon:'🍳', name:'鸿运餐厅', branch:'民雪路店', tag:'家常菜', tagClass:'tag-green',
+    photo:'images/shop_6.jpg',
+    price:71, recommender:'申小鸿', avatar:'申', dianping:'4.0',
+    addr:'浦东新区民雪路96号（曹路大学城）',
+    mapQuery:'浦东新区民雪路96号鸿运餐厅',
+    features:['大学生食堂','曹路米其林','价格实惠'],
+    rating:3.5,
+    dishes:[
+      {name:'沙律牛排（招牌）',icon:'🥩',hl:1},{name:'咸蛋黄鸡翅',icon:'🍗',hl:1},{name:'排条双拼',icon:'🍖'},{name:'玉米烙',icon:'🌽'},{name:'咸肉菜饭',icon:'🍚'}
     ]
   }
 ];
 
 const restaurantIndices = [];
+const featureIcons = {
+  '新鲜直达':'🚚','家庭聚餐':'👥','性价比高':'💰',
+  '09:30-24:00':'🕐','东北地名包厢':'🏠',
+  '无预制菜':'🍳','现点现烧':'🔥','上海地方菜好评榜':'🏆',
+  '10:00-02:00':'🕐','现场选肉现炒':'🔪','9店连锁':'🏪',
+  '牛骨慢熬原汤':'🍲','街边烟火小店':'🏚️','价格实惠':'💰',
+  '牛羊肉锅':'🥘','秘制羊棒骨':'🦴','龙虾烧烤':'🦞',
+  '大学生食堂':'🎓','曹路米其林':'⭐'
+};
 slides.forEach((s, i) => { if (s.type === 'restaurant') restaurantIndices.push(i); });
+
+// ===================== 分类映射 =====================
+const categoryMap = {};
+let currentCat = null;
+slides.forEach((s, i) => {
+  if (s.type === 'category') {
+    currentCat = s.name;
+    categoryMap[currentCat] = { catIdx: i, indices: [i], icon: s.icon };
+  } else if (currentCat) {
+    categoryMap[currentCat].indices.push(i);
+  }
+});
+
+// ===================== 过滤状态 =====================
+let currentCategory = '全部';
+let filteredSlides = [...slides];
+let filteredTotal = slides.length;
+let filteredRestaurantIndices = [...restaurantIndices];
+
+function buildFiltered(catName) {
+  if (catName === '全部') {
+    filteredSlides = slides.map((s, i) => ({ ...s, _origIdx: i }));
+    filteredTotal = slides.length;
+    return slides.map((_, i) => i);
+  }
+  const map = categoryMap[catName];
+  if (!map) return [];
+  const indices = map.indices;
+  filteredSlides = indices.map(i => ({ ...slides[i], _origIdx: i }));
+  filteredTotal = indices.length;
+  return indices;
+}
+
+function rebuildRestaurantIndices() {
+  filteredRestaurantIndices = [];
+  filteredSlides.forEach((s, i) => {
+    if (s.type === 'restaurant') filteredRestaurantIndices.push(i);
+  });
+}
+
+// ===================== 分类面板 =====================
+(function initCatPanel() {
+  const trigger = document.getElementById('catTrigger');
+  const panel = document.getElementById('catPanel');
+
+  // 点击"目录" → 弹出分类面板
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    panel.classList.toggle('show');
+  });
+
+  // 点击面板外 → 收起
+  document.addEventListener('click', (e) => {
+    if (!panel.contains(e.target) && e.target !== trigger && !trigger.contains(e.target)) {
+      panel.classList.remove('show');
+    }
+  });
+})();
+
+function renderCatTabs() {
+  const panel = document.getElementById('catPanel');
+  const cats = ['全部', ...Object.keys(categoryMap)];
+  panel.innerHTML = cats.map((cat, i) => {
+    const isActive = cat === currentCategory;
+    const sep = i > 0 ? '<span class="cat-sep">|</span>' : '';
+    return `${sep}<span class="cat-tag${isActive ? ' active' : ''}" data-cat="${cat}">${cat}</span>`;
+  }).join('');
+
+  panel.querySelectorAll('.cat-tag').forEach(tag => {
+    tag.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const cat = tag.dataset.cat;
+      if (cat === currentCategory) { panel.classList.remove('show'); return; }
+      currentCategory = cat;
+      buildFiltered(cat);
+      rebuildRestaurantIndices();
+      idx = 0;
+      render(true);
+      renderCatTabs();
+      panel.classList.remove('show');
+    });
+  });
+}
 
 // ===================== 状态 =====================
 let mode = 'xinyi';
@@ -475,7 +671,8 @@ const toast = document.getElementById('toast');
     '万水千山总是情，这顿不吃很难行！',
     '组队吗？',
     '我们一直在追寻路上！',
-    'V me fifty yuan我立马去！'
+    'V me fifty yuan我立马去！',
+    'xinQQQingdahao\n心情大好❤'
   ];
   const splashEl = document.getElementById('splash');
   const splashText = document.getElementById('splashText');
@@ -503,7 +700,7 @@ function hideToast() {
 
 // ===================== 渲染 =====================
 function render(instant = false) {
-  const s = slides[idx];
+  const s = mode === 'suixin' ? slides[idx] : filteredSlides[idx];
   if (!s) return;
 
   if (s.type === 'category') {
@@ -520,10 +717,10 @@ function render(instant = false) {
     `;
   } else {
     const dishesHTML = s.dishes.map(d =>
-      `<span class="dish${d.hl ? ' hot' : ''}">${d.name}</span>`
+      `<span class="dish${d.hl ? ' hot' : ''}">${d.icon || ''}${d.name}</span>`
     ).join('');
     const featHTML = s.features.map(f =>
-      `<span class="shop-feat">${f}</span>`
+      `<span class="shop-feat">${featureIcons[f] || ''} ${f}</span>`
     ).join('');
     const photoHTML = s.photo
       ? `<img class="shop-photo" src="${s.photo}" alt="${s.name}" onerror="this.style.display='none'">`
@@ -541,11 +738,17 @@ function render(instant = false) {
           </div>
           <div class="shop-price">¥${s.price}<span>/人</span></div>
         </div>
+        <div class="shop-rating">${'⭐'.repeat(Math.floor(s.rating || 0))}${(s.rating || 0) % 1 >= 0.5 ? '✨' : ''}</div>
         <div class="shop-recommender">
           <span class="avt">${s.avatar}</span> ${s.recommender} 推荐
         </div>
         <div class="shop-features">${featHTML}</div>
         <div class="shop-addr">📍 ${s.addr}</div>
+        <div class="shop-meta">
+          <span><span class="recdish-icon">🍴</span> <span class="recdish-label">推荐菜</span></span>
+          ${s.douyin ? `<span class="meta-sep">|</span><span><span class="dy-icon">🎵</span> 抖音<span class="dy-score">${s.douyin}</span></span>` : ''}
+          ${s.dianping ? `<span class="meta-sep">|</span><span><span class="dp-icon">🍊</span> 大众点评<span class="dp-score">${s.dianping}</span></span>` : ''}
+        </div>
         <div class="shop-dishes">${dishesHTML}</div>
       </div>
     `;
@@ -584,10 +787,10 @@ function goTo(newIdx, dir = 0) {
 }
 
 function goNext() {
-  if (mode === 'xinyi') goTo((idx + 1) % total, 1);
+  if (mode === 'xinyi') goTo((idx + 1) % filteredTotal, 1);
 }
 function goPrev() {
-  if (mode === 'xinyi') goTo((idx - 1 + total) % total, -1);
+  if (mode === 'xinyi') goTo((idx - 1 + filteredTotal) % filteredTotal, -1);
 }
 
 // ===================== 随机模式 =====================
@@ -763,7 +966,7 @@ diceBtn.addEventListener('click', randomSpin);
 
 btnNav.addEventListener('click', () => {
   if (mode === 'xinyi') {
-    const s = slides[idx];
+    const s = filteredSlides[idx];
     if (s.type === 'restaurant') {
       window.open(`https://www.amap.com/search?query=${encodeURIComponent(s.mapQuery)}`, '_blank');
     }
@@ -775,6 +978,7 @@ document.getElementById('menuBtn').addEventListener('click', () => {
 });
 
 // ===================== 启动 =====================
+renderCatTabs();
 render(true);
 </script>
 </body>
