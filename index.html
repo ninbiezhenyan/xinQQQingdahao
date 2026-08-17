@@ -566,7 +566,7 @@ const slides = [
       {name:'油边王（招牌）',icon:'🍖',hl:1},{name:'牛宫后',icon:'🥩',hl:1},{name:'羊排串',icon:'🍢'},{name:'鸡中翅',icon:'鸡翅'},{name:'免费生菜卷',icon:'🥬'}
     ]
   },
-  { type:'category', icon:'<img src="images/cat_yirenshi.png" style="width:90px;height:90px;object-fit:contain;border-radius:12px">', name:'一人食', desc:'快捷实惠 一个人也精彩<br>面食快餐小馆', count:'8家店' },
+  { type:'category', icon:'<img src="images/cat_yirenshi.png" style="width:90px;height:90px;object-fit:contain;border-radius:12px">', name:'一人食', desc:'快捷实惠 一个人也精彩<br>面食快餐小馆', count:'9家店' },
   { type:'restaurant', icon:'🫓', name:'河间驴肉火烧', branch:'胜利路店', tag:'快餐', tagClass:'tag-cyan',
     photo:'images/shop_8.jpg',
     price:29, recommender:'申小红', avatar:'申', dianping:'4.3',
@@ -654,6 +654,17 @@ const slides = [
     dishes:[
       {name:'金强牛肉面（招牌）',icon:'🍜',hl:1},{name:'金强牛腱面',icon:'🥩',hl:1},{name:'二细拌面',icon:'🍜'},{name:'荷包蛋',icon:'🥚'},{name:'泡萝卜',icon:'🥕'}
     ]
+  },
+  { type:'restaurant', icon:'🍜', name:'西安手工面', branch:'顾唐路店', tag:'陕西手工面', tagClass:'tag-cyan',
+    photo:'images/shop_17.jpg',
+    price:23, recommender:'TangT', avatar:'T', dianping:'3.6',
+    addr:'浦东新区顾唐路308号',
+    mapQuery:'顾唐路308号西安手工面',
+    features:['09:00-20:00','手工面食','陕西风味'],
+    rating:4,
+    dishes:[
+      {name:'油泼面（招牌）',icon:'🍜',hl:1},{name:'Biangbiang面',icon:'🍜',hl:1},{name:'肉夹馍',icon:'🥖'},{name:'臊子面',icon:'🍜'},{name:'凉皮',icon:'🥢'}
+    ]
   }
 ];
 
@@ -673,7 +684,8 @@ const featureIcons = {
   '11:00-22:00':'🕐','螺蛳粉专营':'🍜','辣酱自选':'🌶️',
   '10:30-21:30':'🕐','手工面食':'🤲','陕西风味':'🌾',
   '现炒热菜':'🔥','湘菜下饭':'🍚',
-  '兰州牛肉面':'🍜','牛肉酱香':'🥩'
+  '兰州牛肉面':'🍜','牛肉酱香':'🥩',
+  '09:00-20:00':'🕐'
 };
 slides.forEach((s, i) => { if (s.type === 'restaurant') restaurantIndices.push(i); });
 
