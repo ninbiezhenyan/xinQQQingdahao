@@ -566,7 +566,7 @@ const slides = [
       {name:'油边王（招牌）',icon:'🍖',hl:1},{name:'牛宫后',icon:'🥩',hl:1},{name:'羊排串',icon:'🍢'},{name:'鸡中翅',icon:'鸡翅'},{name:'免费生菜卷',icon:'🥬'}
     ]
   },
-  { type:'category', icon:'<img src="images/cat_yirenshi.png" style="width:90px;height:90px;object-fit:contain;border-radius:12px">', name:'一人食', desc:'快捷实惠 一个人也精彩<br>面食快餐小馆', count:'7家店' },
+  { type:'category', icon:'<img src="images/cat_yirenshi.png" style="width:90px;height:90px;object-fit:contain;border-radius:12px">', name:'一人食', desc:'快捷实惠 一个人也精彩<br>面食快餐小馆', count:'8家店' },
   { type:'restaurant', icon:'🫓', name:'河间驴肉火烧', branch:'胜利路店', tag:'快餐', tagClass:'tag-cyan',
     photo:'images/shop_8.jpg',
     price:29, recommender:'申小红', avatar:'申', dianping:'4.3',
@@ -643,6 +643,17 @@ const slides = [
     dishes:[
       {name:'大刀凉皮（招牌）',icon:'🍜',hl:1},{name:'凉皮牛筋面双拼',icon:'🍜',hl:1},{name:'热干面',icon:'🍜'},{name:'麻酱拌面',icon:'🍝'},{name:'馄饨',icon:'🥟'}
     ]
+  },
+  { type:'restaurant', icon:'🍜', name:'金强牛肉面', branch:'虹梅路店', tag:'兰州牛肉面', tagClass:'tag-cyan',
+    photo:'images/shop_16.jpg',
+    price:37, recommender:'TangT', avatar:'T', dianping:'4.5',
+    addr:'闵行区虹桥镇虹梅路2988-2号',
+    mapQuery:'虹桥镇虹梅路2988-2号金强牛肉面',
+    features:['24小时营业','兰州牛肉面','牛肉酱香'],
+    rating:4.5,
+    dishes:[
+      {name:'金强牛肉面（招牌）',icon:'🍜',hl:1},{name:'金强牛腱面',icon:'🥩',hl:1},{name:'二细拌面',icon:'🍜'},{name:'荷包蛋',icon:'🥚'},{name:'泡萝卜',icon:'🥕'}
+    ]
   }
 ];
 
@@ -661,7 +672,8 @@ const featureIcons = {
   '休闲约会':'💕','网红打卡':'📸','免费停车':'🅿️',
   '11:00-22:00':'🕐','螺蛳粉专营':'🍜','辣酱自选':'🌶️',
   '10:30-21:30':'🕐','手工面食':'🤲','陕西风味':'🌾',
-  '现炒热菜':'🔥','湘菜下饭':'🍚'
+  '现炒热菜':'🔥','湘菜下饭':'🍚',
+  '兰州牛肉面':'🍜','牛肉酱香':'🥩'
 };
 slides.forEach((s, i) => { if (s.type === 'restaurant') restaurantIndices.push(i); });
 
