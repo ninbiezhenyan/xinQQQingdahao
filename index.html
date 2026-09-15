@@ -844,7 +844,7 @@ function render(instant = false) {
       `<span class="shop-feat">${featureIcons[f] || ''} ${f}</span>`
     ).join('');
     const photoHTML = s.photo
-      ? `<img class="shop-photo" src="${s.photo}" alt="${s.name}" onerror="this.style.display='none'">`
+      ? `<img class="shop-photo" src="${s.photo}" alt="${s.name}" decoding="async" onerror="this.style.display='none'">`
       : '';
     card.className = 'card card-restaurant';
     if (!instant) card.classList.add('hidden');
@@ -882,6 +882,24 @@ function render(instant = false) {
     });
   }
   hideToast();
+  preloadAround();
+}
+
+// ===================== 图片预加载 =====================
+// 提前下载后面 2 张卡片的图片，切换时不再等待网络
+const imgCache = {};
+function preloadPhoto(src) {
+  if (!src || imgCache[src]) return;
+  imgCache[src] = true;
+  const im = new Image();
+  im.src = src;
+}
+function preloadAround() {
+  const list = mode === 'suixin' ? slides : filteredSlides;
+  [idx + 1, idx + 2].forEach(i => {
+    const s = list[i];
+    if (s && s.photo) preloadPhoto(s.photo);
+  });
 }
 
 // ===================== 导航（心仪版） =====================
