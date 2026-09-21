@@ -11,8 +11,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="打卡餐厅">
-<!-- Android 添加到主屏幕 -->
-<link rel="icon" type="image/png" href="icons/icon-192.png">
+<!-- Android 添加到主屏幕（favicon.ico 放最前：多数国产浏览器（一加/OPPO 自带浏览器）优先抓它当快捷方式图标 -->
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="shortcut icon" href="favicon.ico">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
