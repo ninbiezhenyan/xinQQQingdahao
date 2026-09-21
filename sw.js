@@ -1,6 +1,6 @@
 // Service Worker —— 让站点满足「可安装」条件（生成无浏览器角标的独立桌面图标）
 // 策略：网络优先 + 离线回落。始终拿最新内容，只有断网/超时才用缓存，避免看到旧版本。
-const CACHE = 'shy-restaurant-v2';
+const CACHE = 'shy-restaurant-v3';
 const PRECACHE = [
   './',
   './index.html',
