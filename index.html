@@ -1239,6 +1239,15 @@ installBtn.addEventListener('click', async () => {
   }
 });
 
+// ===== Service Worker =====
+// 目的：满足 PWA「可安装」条件，让 Edge/Chrome 出现「安装」选项 → 生成无浏览器角标的独立桌面图标
+// 策略为网络优先 + 离线回落（sw.js 内实现），不会缓存旧版本
+if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
 // ===================== 启动 =====================
 renderCatTabs();
 render(true);
