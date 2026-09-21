@@ -134,6 +134,28 @@
     border: 1px solid #E8E8E8;
     letter-spacing: 0;
   }
+  /* ===== 装桌面按钮 — 目录下方 ===== */
+  .install-btn {
+    position: fixed;
+    top: 152px;
+    left: 12px;
+    z-index: 96;
+    width: 22px;
+    padding: 5px 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #FF4458;
+    background: #fff;
+    border-radius: 8px;
+    text-align: center;
+    line-height: 1.35;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border: 1px solid #FFD7DA;
+    letter-spacing: 0;
+    transition: opacity 0.5s;
+  }
+  .install-btn.dim { opacity: 0.4; }
   /* ===== 分类弹出面板 ===== */
   .cat-panel {
     position: fixed;
@@ -457,6 +479,9 @@
 <!-- 分类目录触发器 — 卡片左上 -->
 <div class="cat-trigger" id="catTrigger">目<br>录</div>
 <div class="cat-panel" id="catPanel"></div>
+
+<!-- 装桌面按钮 — 目录下方 -->
+<div class="install-btn" id="installBtn">装<br>桌<br>面</div>
 
 <!-- 卡片舞台 -->
 <div class="stage" id="stage">
@@ -1125,6 +1150,68 @@ btnNav.addEventListener('click', () => {
 
 document.getElementById('menuBtn').addEventListener('click', () => {
   alert('🍽️ SHY此生必打卡餐厅\n共 ' + total + ' 张卡片\n心仪版：左右滑动浏览\n随心版：点击随机帮你选');
+});
+
+// ===================== 添加到主屏幕 =====================
+const installBtn = document.getElementById('installBtn');
+let deferredPrompt = null;
+let isStandalone = window.matchMedia('(display-mode: standalone)').matches
+  || window.navigator.standalone === true;
+
+// 已安装则隐藏按钮
+if (isStandalone) installBtn.style.display = 'none';
+
+// 安卓 Chrome / Edge：捕获安装事件，点亮按钮
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.classList.remove('dim');
+});
+
+window.addEventListener('appinstalled', () => {
+  installBtn.style.display = 'none';
+  deferredPrompt = null;
+});
+
+// 3 秒后淡化，不抢主视觉
+setTimeout(() => { if (!deferredPrompt) installBtn.classList.add('dim'); }, 3000);
+
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+installBtn.addEventListener('click', async () => {
+  installBtn.classList.remove('dim');
+
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    if (outcome === 'accepted') installBtn.style.display = 'none';
+    return;
+  }
+
+  if (isIOS()) {
+    alert('📱 苹果手机这样装到桌面\n\n'
+      + '1. 必须用 Safari 打开（微信里没有这个选项）\n'
+      + '2. 点底部中间的「分享」按钮（方框向上箭头）\n'
+      + '3. 下滑找到「添加到主屏幕」\n'
+      + '4. 点右上角「添加」\n\n'
+      + '桌面就会出现粉色 SHY 图标，点开直接全屏，不用再经过微信。');
+  } else {
+    alert('📱 安卓手机这样装到桌面\n\n'
+      + '【不同浏览器菜单位置不同】\n'
+      + '• Chrome：右上角 ⋮ → 「安装应用」或「添加到主屏幕」\n'
+      + '• Edge：右下角 ⋯ → 「添加到手机」\n'
+      + '• 小米自带浏览器：菜单 → 「添加到桌面」\n'
+      + '• 华为浏览器：菜单 → 「添加到桌面」\n'
+      + '• 夸克 / UC：菜单 → 「添加到桌面」\n\n'
+      + '💡 如果菜单里确实找不到：\n'
+      + '① 先确认不是在微信里打开的\n'
+      + '② 换 Chrome 打开本页，左上角会出现可直接点的「装桌面」按钮\n'
+      + '③ 部分手机需要在 设置 → 应用权限 里给浏览器开「创建桌面快捷方式」权限');
+  }
 });
 
 // ===================== 启动 =====================
