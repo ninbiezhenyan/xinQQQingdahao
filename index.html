@@ -1200,17 +1200,42 @@ installBtn.addEventListener('click', async () => {
       + '4. 点右上角「添加」\n\n'
       + '桌面就会出现粉色 SHY 图标，点开直接全屏，不用再经过微信。');
   } else {
-    alert('📱 安卓手机这样装到桌面\n\n'
-      + '【不同浏览器菜单位置不同】\n'
-      + '• Chrome：右上角 ⋮ → 「安装应用」或「添加到主屏幕」\n'
-      + '• Edge：右下角 ⋯ → 「添加到手机」\n'
-      + '• 小米自带浏览器：菜单 → 「添加到桌面」\n'
-      + '• 华为浏览器：菜单 → 「添加到桌面」\n'
-      + '• 夸克 / UC：菜单 → 「添加到桌面」\n\n'
-      + '💡 如果菜单里确实找不到：\n'
-      + '① 先确认不是在微信里打开的\n'
-      + '② 换 Chrome 打开本页，左上角会出现可直接点的「装桌面」按钮\n'
-      + '③ 部分手机需要在 设置 → 应用权限 里给浏览器开「创建桌面快捷方式」权限');
+    // 识别浏览器，给出精确菜单路径
+    const ua = navigator.userAgent;
+    let bName = '当前浏览器', bPath = '菜单里找「添加到桌面」或「添加到主屏幕」';
+    if (/Quark/i.test(ua)) {
+      bName = '夸克';
+      bPath = '① 点屏幕【底部正中间】的「≡」三条杠\n'
+        + '   　→ 工具箱 → 添加到桌面\n'
+        + '② 或者点地址栏【左侧】的小图标\n'
+        + '   　→ 添加到主屏幕\n'
+        + '③ 或者长按地址栏文字，看浮动菜单';
+    } else if (/UCBrowser|UCWEB/i.test(ua)) {
+      bName = 'UC 浏览器';
+      bPath = '底部中间「≡」→ 工具箱 → 添加到桌面';
+    } else if (/MiuiBrowser|XiaoMi/i.test(ua)) {
+      bName = '小米浏览器';
+      bPath = '右下角「⋮」→ 添加到桌面';
+    } else if (/HuaweiBrowser|HarmonyOS/i.test(ua)) {
+      bName = '华为浏览器';
+      bPath = '底部「⋮」/ 菜单 → 添加到桌面';
+    } else if (/EdgA|Edg\//i.test(ua)) {
+      bName = 'Edge';
+      bPath = '右下角「⋯」→ 添加到手机 → 安装';
+    } else if (/Chrome/i.test(ua)) {
+      bName = 'Chrome';
+      bPath = '右上角「⋮」→ 安装应用 / 添加到主屏幕';
+    }
+
+    try { navigator.clipboard.writeText(location.href); } catch (e) {}
+
+    alert('📱 ' + bName + ' 添加桌面图标\n\n'
+      + bPath + '\n\n'
+      + '—— 上面都找不到时，用这招 ——\n'
+      + '长按手机桌面空白处 → 小部件 / 快捷方式\n'
+      + '→ 选「网页快捷方式」→ 粘贴网址\n'
+      + '（网址已帮你复制，长按粘贴即可）\n\n'
+      + '注意：必须在浏览器里打开，微信内没有这些选项');
   }
 });
 
