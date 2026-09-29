@@ -578,7 +578,7 @@ const slides = [
       {name:'油边王（招牌）',icon:'🍖',hl:1},{name:'牛宫后',icon:'🥩',hl:1},{name:'羊排串',icon:'🍢'},{name:'鸡中翅',icon:'鸡翅'},{name:'免费生菜卷',icon:'🥬'}
     ]
   },
-  { type:'category', icon:'<img src="images/cat_yirenshi.png" style="width:90px;height:90px;object-fit:contain;border-radius:12px">', name:'一人食', desc:'快捷实惠 一个人也精彩<br>面食快餐小馆', count:'9家店' },
+  { type:'category', icon:'<img src="images/cat_yirenshi.png" style="width:90px;height:90px;object-fit:contain;border-radius:12px">', name:'一人食', desc:'快捷实惠 一个人也精彩<br>面食快餐小馆', count:'10家店' },
   { type:'restaurant', icon:'🫓', name:'河间驴肉火烧', branch:'胜利路店', tag:'快餐', tagClass:'tag-cyan',
     photo:'images/shop_8.jpg',
     price:29, recommender:'申小红', avatar:'申', dianping:'4.3',
@@ -677,6 +677,17 @@ const slides = [
     dishes:[
       {name:'油泼面（招牌）',icon:'🍜',hl:1},{name:'Biangbiang面',icon:'🍜',hl:1},{name:'蛋炒麻食',icon:'🥚'},{name:'臊子面',icon:'🍜'},{name:'凉皮',icon:'🥢'}
     ]
+  },
+  { type:'restaurant', icon:'🥣', name:'黄记猪杂粥觅味馆', branch:'张江店', tag:'潮汕砂锅粥', tagClass:'tag-cyan',
+    photo:'images/shop_18.jpg',
+    price:78, recommender:'Nin', avatar:'N', dianping:'4.2',
+    addr:'浦东新区张江镇青桐路718号一层-3',
+    mapQuery:'浦东新区张江镇青桐路718号黄记猪杂粥觅味馆',
+    features:['11:00-24:00','猪杂现切','潮汕风味'],
+    rating:4,
+    dishes:[
+      {name:'招牌猪杂粥（招牌）',icon:'🥣',hl:1},{name:'白灼肠粉',icon:'🍜',hl:1},{name:'潮汕虾饼',icon:'🦐'},{name:'蒜香排骨',icon:'🍖'},{name:'脆皮大肠',icon:'🍢'}
+    ]
   }
 ];
 
@@ -697,7 +708,8 @@ const featureIcons = {
   '10:30-21:30':'🕐','手工面食':'🤲','陕西风味':'🌾',
   '现炒热菜':'🔥','湘菜下饭':'🍚',
   '兰州牛肉面':'🍜','牛肉酱香':'🥩',
-  '09:00-20:00':'🕐'
+  '09:00-20:00':'🕐',
+  '11:00-24:00':'🕐','猪杂现切':'🔪','潮汕风味':'📍'
 };
 slides.forEach((s, i) => { if (s.type === 'restaurant') restaurantIndices.push(i); });
 
