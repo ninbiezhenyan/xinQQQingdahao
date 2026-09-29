@@ -688,8 +688,42 @@ const slides = [
     dishes:[
       {name:'招牌猪杂粥（招牌）',icon:'🥣',hl:1},{name:'白灼肠粉',icon:'🍜',hl:1},{name:'潮汕虾饼',icon:'🦐'},{name:'蒜香排骨',icon:'🍖'},{name:'脆皮大肠',icon:'🍢'}
     ]
+  },
+  { type:'category', icon:'🍰', name:'甜品', desc:'现烤出炉 甜到心坎里<br>面包甜点烘焙', count:'2家店' },
+  { type:'restaurant', icon:'🥐', name:'SOSO盐面包', branch:'吴江路店', tag:'盐面包', tagClass:'tag-cyan',
+    photo:'images/shop_19.jpg',
+    price:35, recommender:'TangT', avatar:'T', dianping:'4.4',
+    addr:'静安区吴江路198号',
+    mapQuery:'静安区吴江路198号SOSO盐面包',
+    features:['09:00-21:00','天然酵母','盐面包专门店'],
+    rating:5,
+    dishes:[
+      {name:'柠檬挞软盐面包（招牌）',icon:'🍋',hl:1},{name:'原味软盐面包',icon:'🥐',hl:1},{name:'布里欧盐面包',icon:'🧈'},{name:'明太子盐面包',icon:'🐟'},{name:'巧克力曲奇盐面包',icon:'🍪'}
+    ]
+  },
+  { type:'restaurant', icon:'🥖', name:'FOURNIL BAKERY', branch:'陆悦天地店', tag:'法式烘焙', tagClass:'tag-orange',
+    photo:'images/shop_20.jpg',
+    price:41, recommender:'TangT', avatar:'T', dianping:'4.3',
+    addr:'浦东新区张江镇中科路1717弄1-5号陆悦天地（木星）L1层M-L102',
+    mapQuery:'浦东新区中科路1717弄陆悦天地FOURNIL BAKERY',
+    features:['07:00-22:00','现烤现卖','法式烘焙'],
+    rating:5,
+    dishes:[
+      {name:'胡萝卜碱水球（招牌）',icon:'🥕',hl:1},{name:'开心果玫瑰可颂',icon:'🥐',hl:1},{name:'泰奶巴斯克',icon:'🍰'},{name:'咸奶油草莓泡芙',icon:'🍓'},{name:'黑加仑乳酪拿破仑',icon:'🫐'}
+    ]
   }
 ];
+
+// 每个 slide 所属分类（用于判断哪些分类不参与随机）
+const slideCategory = [];
+let _curCat = null;
+slides.forEach(s => {
+  if (s.type === 'category') _curCat = s.name;
+  slideCategory.push(_curCat);
+});
+
+// 不参与「随心版」随机抽取的分类
+const NO_RANDOM_CATS = ['甜品'];
 
 const restaurantIndices = [];
 const featureIcons = {
@@ -709,9 +743,13 @@ const featureIcons = {
   '现炒热菜':'🔥','湘菜下饭':'🍚',
   '兰州牛肉面':'🍜','牛肉酱香':'🥩',
   '09:00-20:00':'🕐',
-  '11:00-24:00':'🕐','猪杂现切':'🔪','潮汕风味':'📍'
+  '11:00-24:00':'🕐','猪杂现切':'🔪','潮汕风味':'📍',
+  '09:00-21:00':'🕐','天然酵母':'🌾','盐面包专门店':'🧂',
+  '07:00-22:00':'🕐','现烤现卖':'🔥','法式烘焙':'🥖'
 };
-slides.forEach((s, i) => { if (s.type === 'restaurant') restaurantIndices.push(i); });
+slides.forEach((s, i) => {
+  if (s.type === 'restaurant' && !NO_RANDOM_CATS.includes(slideCategory[i])) restaurantIndices.push(i);
+});
 
 // ===================== 分类映射 =====================
 const categoryMap = {};
