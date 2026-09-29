@@ -554,7 +554,7 @@ const slides = [
       {name:'牛羊肉锅（招牌）',icon:'🥘',hl:1},{name:'秘制羊棒骨',icon:'🍖',hl:1},{name:'蒜蓉小龙虾',icon:'🦞',hl:1},{name:'羊肉串',icon:'🍢'},{name:'烧饼',icon:'🫓'}
     ]
   },
-  { type:'category', icon:'🍳', name:'家常', desc:'曹路米其林 大学食堂<br>民雪路烟火小馆', count:'1家店' },
+  { type:'category', icon:'🍳', name:'家常', desc:'曹路米其林 大学食堂<br>民雪路烟火小馆', count:'2家店' },
   { type:'restaurant', icon:'🍳', name:'鸿运餐厅', branch:'民雪路店', tag:'家常菜', tagClass:'tag-green',
     photo:'images/shop_6.jpg',
     price:71, recommender:'申小鸿', avatar:'申', dianping:'4.0',
@@ -564,6 +564,17 @@ const slides = [
     rating:3.5,
     dishes:[
       {name:'沙律牛排（招牌）',icon:'🥩',hl:1},{name:'咸蛋黄鸡翅',icon:'🍗',hl:1},{name:'排条双拼',icon:'🍖'},{name:'玉米烙',icon:'🌽'},{name:'咸肉菜饭',icon:'🍚'}
+    ]
+  },
+  { type:'restaurant', icon:'🥘', name:'皖豫土菜馆', branch:'月新北路店', tag:'土菜', tagClass:'tag-orange',
+    photo:'images/shop_21.jpg',
+    price:60, recommender:'Ps', avatar:'P', dianping:'4.1',
+    addr:'宝山区月浦镇段泾村月新北路66号',
+    mapQuery:'宝山区月浦镇月新北路66号皖豫土菜馆',
+    features:['10:00-13:00 16:00-20:30','皖豫土菜','汤鲜味浓'],
+    rating:4,
+    dishes:[
+      {name:'昂刺鱼豆腐汤（招牌）',icon:'🐟',hl:1},{name:'红烧牛肉',icon:'🥩',hl:1},{name:'农家小炒肉',icon:'🌶️'},{name:'手工水饺',icon:'🥟'},{name:'锅贴饼子',icon:'🫓'}
     ]
   },
   { type:'category', icon:'🍢', name:'烧烤', desc:'炭火直烤 东北风味<br>油边王串大味足', count:'1家店' },
@@ -745,7 +756,8 @@ const featureIcons = {
   '09:00-20:00':'🕐',
   '11:00-24:00':'🕐','猪杂现切':'🔪','潮汕风味':'📍',
   '09:00-21:00':'🕐','天然酵母':'🌾','盐面包专门店':'🧂',
-  '07:00-22:00':'🕐','现烤现卖':'🔥','法式烘焙':'🥖'
+  '07:00-22:00':'🕐','现烤现卖':'🔥','法式烘焙':'🥖',
+  '10:00-13:00 16:00-20:30':'🕐','皖豫土菜':'🏚️','汤鲜味浓':'🥣'
 };
 slides.forEach((s, i) => {
   if (s.type === 'restaurant' && !NO_RANDOM_CATS.includes(slideCategory[i])) restaurantIndices.push(i);
