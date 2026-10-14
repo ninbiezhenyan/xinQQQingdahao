@@ -589,7 +589,7 @@ const slides = [
       {name:'油边王（招牌）',icon:'🍖',hl:1},{name:'牛宫后',icon:'🥩',hl:1},{name:'羊排串',icon:'🍢'},{name:'鸡中翅',icon:'鸡翅'},{name:'免费生菜卷',icon:'🥬'}
     ]
   },
-  { type:'category', icon:'<img src="images/cat_yirenshi.png" style="width:90px;height:90px;object-fit:contain;border-radius:12px">', name:'一人食', desc:'快捷实惠 一个人也精彩<br>面食快餐小馆', count:'10家店' },
+  { type:'category', icon:'<img src="images/cat_yirenshi.png" style="width:90px;height:90px;object-fit:contain;border-radius:12px">', name:'一人食', desc:'快捷实惠 一个人也精彩<br>面食快餐小馆', count:'11家店' },
   { type:'restaurant', icon:'🫓', name:'河间驴肉火烧', branch:'胜利路店', tag:'快餐', tagClass:'tag-cyan',
     photo:'images/shop_8.jpg',
     price:29, recommender:'申小红', avatar:'申', dianping:'4.3',
@@ -700,6 +700,17 @@ const slides = [
       {name:'招牌猪杂粥（招牌）',icon:'🥣',hl:1},{name:'白灼肠粉',icon:'🍜',hl:1},{name:'潮汕虾饼',icon:'🦐'},{name:'蒜香排骨',icon:'🍖'},{name:'脆皮大肠',icon:'🍢'}
     ]
   },
+  { type:'restaurant', icon:'🍲', name:'郑阿公顺德鸡煲', branch:'长泰广场店', tag:'顺德鸡煲', tagClass:'tag-orange',
+    photo:'images/shop_22.jpg',
+    price:57, recommender:'小火龙', avatar:'火', dianping:'4.4',
+    addr:'浦东新区张江镇金科路地铁站4号口长泰广场10座B1层',
+    mapQuery:'浦东新区金科路2889弄长泰广场10座B1层郑阿公顺德鸡煲',
+    features:['10:00-22:00','顺德风味','无预制菜'],
+    rating:4.5,
+    dishes:[
+      {name:'顺德鸡煲（招牌）',icon:'🍲',hl:1},{name:'双皮奶',icon:'🍮',hl:1},{name:'手工肠粉',icon:'🥟'},{name:'番茄虾滑煲',icon:'🍤'},{name:'腊味煲仔饭',icon:'🍚'}
+    ]
+  },
   { type:'category', icon:'🍰', name:'甜品', desc:'现烤出炉 甜到心坎里<br>面包甜点烘焙', count:'2家店' },
   { type:'restaurant', icon:'🥐', name:'SOSO盐面包', branch:'吴江路店', tag:'盐面包', tagClass:'tag-cyan',
     photo:'images/shop_19.jpg',
@@ -757,7 +768,8 @@ const featureIcons = {
   '11:00-24:00':'🕐','猪杂现切':'🔪','潮汕风味':'📍',
   '09:00-21:00':'🕐','天然酵母':'🌾','盐面包专门店':'🧂',
   '07:00-22:00':'🕐','现烤现卖':'🔥','法式烘焙':'🥖',
-  '10:00-13:00 16:00-20:30':'🕐','皖豫土菜':'🏚️','汤鲜味浓':'🥣'
+  '10:00-13:00 16:00-20:30':'🕐','皖豫土菜':'🏚️','汤鲜味浓':'🥣',
+  '10:00-22:00':'🕐','顺德风味':'🐔'
 };
 slides.forEach((s, i) => {
   if (s.type === 'restaurant' && !NO_RANDOM_CATS.includes(slideCategory[i])) restaurantIndices.push(i);
