@@ -1158,20 +1158,39 @@ function goTo(newIdx, dir = 0) {
   }, 260);
 }
 
+// 彩蛋卡展示：先淡出当前卡（同时清掉手势拖拽残留的位移），再淡入彩蛋卡
+// 不能直接 render(true) —— 那样拖拽中的 translateX 会残留，卡片会停在偏移位置
+function showEgg(eggIdx) {
+  eggOverride = eggIdx;
+  card.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+  card.style.opacity = '0';
+  card.style.transform = '';
+  setTimeout(() => {
+    render(true);
+    card.offsetHeight;
+    requestAnimationFrame(() => {
+      card.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+      card.style.opacity = '1';
+      card.style.transform = '';
+      setTimeout(() => { card.style.transition = ''; }, 400);
+    });
+  }, 250);
+}
+
 function goNext() {
   if (mode !== 'xinyi') return;
   // 当前正停在彩蛋卡上 → 滑走，回到正常卡片流
   if (eggOverride >= 0) { eggOverride = -1; goTo((idx + 1) % filteredTotal, 1); return; }
   // 心仪版「滑动」计数，达到该彩蛋阈值则插入展示
   const hit = eggHit('xinyi');
-  if (hit >= 0) { eggOverride = hit; render(true); }
+  if (hit >= 0) { showEgg(hit); }
   else goTo((idx + 1) % filteredTotal, 1);
 }
 function goPrev() {
   if (mode !== 'xinyi') return;
   if (eggOverride >= 0) { eggOverride = -1; goTo((idx - 1 + filteredTotal) % filteredTotal, -1); return; }
   const hit = eggHit('xinyi');
-  if (hit >= 0) { eggOverride = hit; render(true); }
+  if (hit >= 0) { showEgg(hit); }
   else goTo((idx - 1 + filteredTotal) % filteredTotal, -1);
 }
 
