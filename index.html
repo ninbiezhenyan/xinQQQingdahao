@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>SHY此生必打卡餐厅</title>
-<meta name="app-build" content="2026-10-25a">
+<meta name="app-build" content="2026-10-25b">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#FF8A90">
 <!-- iOS 添加到主屏幕 -->
@@ -194,8 +194,8 @@
     width: 100%;
     max-width: 360px;
     height: 55vh;
-    max-height: min(520px, calc(100% - 48px));   /* 给下方评论条留位 */
-    min-height: 300px;
+    max-height: min(520px, calc(100% - 38px));   /* 仅让出矮评论条的空间 */
+    min-height: 340px;          /* 恢复原始最小高度 */
     flex: 0 1 auto;
     position: relative;
     display: flex;
@@ -399,7 +399,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    width: 100%;                /* 关键：宽度撑满，避免被窄评论条带收缩 */
+    max-width: 360px;           /* 与卡片同宽，卡片尺寸保持原样 */
     max-height: 100%;
     min-height: 0;
   }
@@ -409,14 +411,13 @@
     align-items: center;
     gap: 6px;
     width: 180px;              /* 原为通栏，现收窄一半 */
-    max-width: 52%;
     flex-shrink: 0;
-    height: 38px;
-    padding: 0 4px 0 13px;
+    height: 30px;              /* 高度压低 */
+    padding: 0 4px 0 12px;
     box-sizing: border-box;
     background: #FFF5F6;
     border: 1px solid #FFE0E3;
-    border-radius: 19px;
+    border-radius: 15px;
     box-shadow: 0 2px 8px rgba(255,68,88,0.06);
   }
   .cmt-input {
@@ -432,8 +433,8 @@
   .cmt-input::placeholder { color: #D8AAAA; }
   .cmt-send {
     flex-shrink: 0;
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     padding: 0;
     border: none;
     border-radius: 50%;
