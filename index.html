@@ -531,7 +531,7 @@ const slides = [
       {name:'招牌地锅鸡（现炒）',icon:'🐔',hl:1},{name:'地锅鸡双人餐 ¥99',icon:'🍗',hl:1},{name:'排骨锅',icon:'🍖'},{name:'贴饼子',icon:'🫓'}
     ]
   },
-  { type:'category', icon:'🐂', name:'火锅', desc:'牛骨慢熬 原汤醇厚<br>张江街边烟火小馆', count:'2家店' },
+  { type:'category', icon:'🐂', name:'火锅', desc:'牛骨慢熬 原汤醇厚<br>张江街边烟火小馆', count:'3家店' },
   { type:'restaurant', icon:'🐂', name:'大成牛肉汤馆', branch:'张江店', tag:'牛肉汤', tagClass:'tag-cyan',
     photo:'images/shop_5.jpg',
     price:65, recommender:'申小红', avatar:'申', dianping:'4.4',
@@ -554,7 +554,18 @@ const slides = [
       {name:'牛羊肉锅（招牌）',icon:'🥘',hl:1},{name:'秘制羊棒骨',icon:'🍖',hl:1},{name:'蒜蓉小龙虾',icon:'🦞',hl:1},{name:'羊肉串',icon:'🍢'},{name:'烧饼',icon:'🫓'}
     ]
   },
-  { type:'category', icon:'🍳', name:'家常', desc:'曹路米其林 大学食堂<br>民雪路烟火小馆', count:'2家店' },
+  { type:'restaurant', icon:'🍢', name:'小胡同铜锅涮肉', branch:'佳林路店', tag:'老北京涮肉', tagClass:'tag-cyan',
+    photo:'images/shop_25.jpg',
+    price:90, recommender:'Ln', avatar:'L', dianping:'4.4',
+    addr:'浦东新区金桥镇佳林路96号1层（近金桥太茂）',
+    mapQuery:'浦东新区佳林路96号小胡同铜锅涮肉',
+    features:['11:00-02:00','铜锅涮肉','深夜营业'],
+    rating:4,
+    dishes:[
+      {name:'手切羊肉（招牌）',icon:'🐑',hl:1},{name:'特色羊蝎子',icon:'🦴',hl:1},{name:'澳洲双层肥牛',icon:'🥩'},{name:'胡同羊肉串',icon:'🍢'},{name:'传统清水锅',icon:'🍲'}
+    ]
+  },
+  { type:'category', icon:'🍳', name:'家常', desc:'曹路米其林 大学食堂<br>民雪路烟火小馆', count:'3家店' },
   { type:'restaurant', icon:'🍳', name:'鸿运餐厅', branch:'民雪路店', tag:'家常菜', tagClass:'tag-green',
     photo:'images/shop_6.jpg',
     price:71, recommender:'申小鸿', avatar:'申', dianping:'4.0',
@@ -577,6 +588,17 @@ const slides = [
       {name:'昂刺鱼豆腐汤（招牌）',icon:'🐟',hl:1},{name:'红烧土公鸡',icon:'🐔',hl:1},{name:'红烧甲鱼',icon:'🐢'}
     ]
   },
+  { type:'restaurant', icon:'🌶️', name:'江西小炒', branch:'民耀路店', tag:'江西小炒', tagClass:'tag-red',
+    photo:'images/shop_27.jpg',
+    price:38, recommender:'申小红', avatar:'申', dianping:'4.0',
+    addr:'浦东新区曹路镇民耀路374号-4-2户',
+    mapQuery:'浦东新区民耀路374号江西小炒',
+    features:['现炒锅气','辣度可选','价格实惠'],
+    rating:4.5,
+    dishes:[
+      {name:'小炒牛肉（招牌）',icon:'🥩',hl:1},{name:'农家一碗香',icon:'🍳',hl:1},{name:'野山笋炒腊肉',icon:'🥓'},{name:'芋子滑牛肉',icon:'🍲'},{name:'肉末茄子',icon:'🍆'}
+    ]
+  },
   { type:'category', icon:'🍢', name:'烧烤', desc:'炭火直烤 东北风味<br>油边王串大味足', count:'1家店' },
   { type:'restaurant', icon:'🍢', name:'沪上油边王', branch:'浦东店', tag:'烧烤', tagClass:'tag-orange',
     photo:'images/shop_14.jpg',
@@ -589,7 +611,7 @@ const slides = [
       {name:'油边王（招牌）',icon:'🍖',hl:1},{name:'牛宫后',icon:'🥩',hl:1},{name:'羊排串',icon:'🍢'},{name:'鸡中翅',icon:'鸡翅'},{name:'免费生菜卷',icon:'🥬'}
     ]
   },
-  { type:'category', icon:'<img src="images/cat_yirenshi.png" style="width:90px;height:90px;object-fit:contain;border-radius:12px">', name:'一人食', desc:'快捷实惠 一个人也精彩<br>面食快餐小馆', count:'11家店' },
+  { type:'category', icon:'<img src="images/cat_yirenshi.png" style="width:90px;height:90px;object-fit:contain;border-radius:12px">', name:'一人食', desc:'快捷实惠 一个人也精彩<br>面食快餐小馆', count:'14家店' },
   { type:'restaurant', icon:'🫓', name:'河间驴肉火烧', branch:'胜利路店', tag:'快餐', tagClass:'tag-cyan',
     photo:'images/shop_8.jpg',
     price:29, recommender:'申小红', avatar:'申', dianping:'4.3',
@@ -651,7 +673,7 @@ const slides = [
     addr:'浦东新区张江镇荣科路280-282号翡翠荟盒1层107号',
     mapQuery:'浦东新区张江镇荣科路280号胖冬瓜浏阳菜馆',
     features:['现炒热菜','湘菜下饭','性价比高'],
-    rating:4,
+    rating:3,
     dishes:[
       {name:'浏阳炒饭（招牌）',icon:'🍚',hl:1},{name:'香煎金钱蛋',icon:'🥚',hl:1},{name:'辣椒炒肉',icon:'🌶️'},{name:'剁椒鱼头',icon:'🐟'},{name:'招牌胖冬瓜',icon:'冬瓜'}
     ]
@@ -709,6 +731,39 @@ const slides = [
     rating:4.5,
     dishes:[
       {name:'顺德鸡煲（招牌）',icon:'🍲',hl:1},{name:'双皮奶',icon:'🍮',hl:1},{name:'手工肠粉',icon:'🥟'},{name:'番茄虾滑煲',icon:'🍤'},{name:'腊味煲仔饭',icon:'🍚'}
+    ]
+  },
+  { type:'restaurant', icon:'🍚', name:'魏记小厨', branch:'佳林路店', tag:'本帮菜', tagClass:'tag-green',
+    photo:'images/shop_23.jpg',
+    price:69, recommender:'草', avatar:'草', dianping:'4.4',
+    addr:'浦东新区金桥镇佳林路157号（金高路与佳林路交叉口）',
+    mapQuery:'浦东新区佳林路157号魏记小厨',
+    features:['11:00-13:30 17:00-21:00','量大实惠','本帮菜'],
+    rating:4.5,
+    dishes:[
+      {name:'金汤大骨（招牌）',icon:'🍖',hl:1},{name:'本帮脆鳝',icon:'🐍',hl:1},{name:'椒盐排条',icon:'🍗'},{name:'山东炒活鸡锅仔',icon:'🍲'},{name:'西湖牛肉羹',icon:'🥣'}
+    ]
+  },
+  { type:'restaurant', icon:'🥢', name:'傅记小菜', branch:'佳林路店', tag:'徽菜', tagClass:'tag-green',
+    photo:'images/shop_24.jpg',
+    price:87, recommender:'Ln', avatar:'L', dianping:'4.6',
+    addr:'浦东新区金桥镇佳林路128号底层（魏记小厨斜对面）',
+    mapQuery:'浦东新区佳林路128号傅记小菜',
+    features:['10:00-23:00','徽菜本帮','有包厢'],
+    rating:4.5,
+    dishes:[
+      {name:'秘制酱油虾（招牌）',icon:'🦐',hl:1},{name:'黄山笋干炒腊肉',icon:'🥓',hl:1},{name:'招牌土鸡汤',icon:'🍲'},{name:'双色鱼头',icon:'🐟'},{name:'招牌腰果麻球',icon:'🍡'}
+    ]
+  },
+  { type:'restaurant', icon:'🍜', name:'木叔小面', branch:'佳林路店', tag:'重庆小面', tagClass:'tag-orange',
+    photo:'images/shop_26.jpg',
+    price:24, recommender:'Ln', avatar:'L', dianping:'4.3',
+    addr:'浦东新区金桥镇佳林路120号底层',
+    mapQuery:'浦东新区佳林路120号木叔小面',
+    features:['09:00-21:00','重庆风味','辣度可选'],
+    rating:4.5,
+    dishes:[
+      {name:'泡椒鸡杂面（招牌）',icon:'🌶️',hl:1},{name:'重庆小面',icon:'🍜',hl:1},{name:'牛肉面',icon:'🥩'},{name:'肥肠面',icon:'🍲'},{name:'番茄肉丸面',icon:'🍅'}
     ]
   },
   { type:'category', icon:'🍰', name:'甜品', desc:'现烤出炉 甜到心坎里<br>面包甜点烘焙', count:'2家店' },
@@ -769,7 +824,11 @@ const featureIcons = {
   '09:00-21:00':'🕐','天然酵母':'🌾','盐面包专门店':'🧂',
   '07:00-22:00':'🕐','现烤现卖':'🔥','法式烘焙':'🥖',
   '10:00-13:00 16:00-20:30':'🕐','皖豫土菜':'🏚️','汤鲜味浓':'🥣',
-  '10:00-22:00':'🕐','顺德风味':'🐔'
+  '10:00-22:00':'🕐','顺德风味':'🐔',
+  '11:00-13:30 17:00-21:00':'🕐','量大实惠':'🍚','本帮菜':'🏚️',
+  '10:00-23:00':'🕐','徽菜本帮':'🥢','有包厢':'🚪',
+  '09:00-21:00':'🕐','重庆风味':'🌶️','辣度可选':'🌡️',
+  '深夜营业':'🌙','铜锅涮肉':'🍲','现炒锅气':'🔥'
 };
 slides.forEach((s, i) => {
   if (s.type === 'restaurant' && !NO_RANDOM_CATS.includes(slideCategory[i])) restaurantIndices.push(i);
