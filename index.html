@@ -842,17 +842,20 @@ let eggOverride = -1;
 
 // 每次「滑动 / 随机」操作后调用；命中则返回该卡在 slides 中的索引，否则返回 -1
 function eggHit(mode) {
+  // 先给所有彩蛋各自递增，互不干扰 —— 否则先命中的那个 return 掉会让后面的漏计一次
+  const ready = [];
   for (const st of eggStates) {
     if (st.idx < 0) continue;
     const limit = st.cfg[mode];
     if (!limit) continue;
     st[mode + 'Count']++;
-    if (st[mode + 'Count'] >= limit) {
-      st[mode + 'Count'] = 0;   // 重置后重新计算
-      return st.idx;
-    }
+    if (st[mode + 'Count'] >= limit) ready.push(st);
   }
-  return -1;
+  if (!ready.length) return -1;
+  // 同一操作多个彩蛋同时达标时取配置靠前的一个，其余保留计数、顺延到下一次
+  const chosen = ready[0];
+  chosen[mode + 'Count'] = 0;   // 重置后重新计算
+  return chosen.idx;
 }
 
 // 每个 slide 所属分类（用于判断哪些分类不参与随机）
