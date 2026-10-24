@@ -278,6 +278,13 @@
     display: block;
     flex-shrink: 0;
   }
+  /* 彩蛋卡：整卡只有一张图 */
+  .card-egg { padding: 0; background: #FFF5F6; }
+  .card-egg .egg-photo {
+    height: 100%;
+    min-height: 0;
+    object-fit: cover;
+  }
   .shop-body {
     padding: 14px 16px 16px;
     display: flex;
@@ -788,8 +795,25 @@ const slides = [
     dishes:[
       {name:'胡萝卜碱水球（招牌）',icon:'🥕',hl:1},{name:'开心果玫瑰可颂',icon:'🥐',hl:1},{name:'泰奶巴斯克',icon:'🍰'},{name:'咸奶油草莓泡芙',icon:'🍓'},{name:'黑加仑乳酪拿破仑',icon:'🫐'}
     ]
+  },
+  // ===== 隐藏彩蛋卡（shop_28｜后台标识：上帝之手）=====
+  // · 卡面只显示图片，不带任何文字信息（店名仅作后台标识，界面不展示）
+  // · 心仪版（顺序浏览）不显示 —— buildFiltered() 里已过滤掉
+  // · 随心版（随机）参与正常抽取；第 EGG_STEP 次随机强制锁定为它
+  // · 出现后从随机池移除，且写入 localStorage，刷新/重开也不会再出现
+  { type:'restaurant', icon:'🎁', name:'上帝之手', branch:'', tag:'', tagClass:'',
+    photo:'images/shop_28.jpg',
+    price:'', recommender:'', avatar:'', dianping:'',
+    addr:'', mapQuery:'',
+    features:[], rating:0, egg:true,
+    dishes:[]
   }
 ];
+
+// 随机彩蛋配置
+const EGG_STEP = 5;                 // 第 5 次随机触发
+const EGG_KEY = 'shy_egg_28_shown'; // 已出现过的标记
+const eggIdx = slides.findIndex(s => s.egg === true);
 
 // 每个 slide 所属分类（用于判断哪些分类不参与随机）
 const slideCategory = [];
@@ -831,8 +855,28 @@ const featureIcons = {
   '深夜营业':'🌙','铜锅涮肉':'🍲','现炒锅气':'🔥'
 };
 slides.forEach((s, i) => {
-  if (s.type === 'restaurant' && !NO_RANDOM_CATS.includes(slideCategory[i])) restaurantIndices.push(i);
+  // egg 卡片无视 NO_RANDOM_CATS，强制参与随心版随机
+  if (s.type === 'restaurant' && (s.egg || !NO_RANDOM_CATS.includes(slideCategory[i]))) restaurantIndices.push(i);
 });
+
+// 彩蛋是否已出现过（持久化）
+let eggShown = false;
+try {
+  eggShown = localStorage.getItem(EGG_KEY) === '1';
+  // 网址带 ?egg=reset 可清掉标记，方便自己反复测试
+  if (location.search.indexOf('egg=reset') > -1) {
+    localStorage.removeItem(EGG_KEY);
+    eggShown = false;
+  }
+} catch (e) {}
+
+// 把彩蛋卡从随机池中摘掉（一旦出现过就不再参与）
+function dropEgg() {
+  if (eggIdx < 0) return;
+  const k = restaurantIndices.indexOf(eggIdx);
+  if (k > -1) restaurantIndices.splice(k, 1);
+}
+if (eggShown) dropEgg();
 
 // ===================== 分类映射 =====================
 const categoryMap = {};
@@ -854,13 +898,14 @@ let filteredRestaurantIndices = [...restaurantIndices];
 
 function buildFiltered(catName) {
   if (catName === '全部') {
-    filteredSlides = slides.map((s, i) => ({ ...s, _origIdx: i }));
-    filteredTotal = slides.length;
-    return slides.map((_, i) => i);
+    // 心仪版：过滤掉隐藏彩蛋卡（egg）
+    filteredSlides = slides.map((s, i) => ({ ...s, _origIdx: i })).filter(s => !s.egg);
+    filteredTotal = filteredSlides.length;
+    return filteredSlides.map(s => s._origIdx);
   }
   const map = categoryMap[catName];
   if (!map) return [];
-  const indices = map.indices;
+  const indices = map.indices.filter(i => !slides[i].egg);
   filteredSlides = indices.map(i => ({ ...slides[i], _origIdx: i }));
   filteredTotal = indices.length;
   return indices;
@@ -922,7 +967,7 @@ let mode = 'xinyi';
 let idx = 0;
 let randomCount = 0;
 let isSpinning = false;
-const total = slides.length;
+const total = slides.filter(s => !s.egg).length;  // 不含隐藏彩蛋卡
 const card = document.getElementById('card');
 const stageEl = document.getElementById('stage');
 const actionsBar = document.getElementById('actionsBar');
@@ -983,6 +1028,14 @@ function render(instant = false) {
         <div class="cat-desc">${s.desc}</div>
         <div class="cat-count">— ${s.count} —</div>
       </div>
+    `;
+  } else if (s.egg) {
+    // 彩蛋卡：整卡只有一张图，不渲染任何文字信息
+    card.className = 'card card-restaurant card-egg';
+    if (!instant) card.classList.add('hidden');
+    card.offsetHeight;
+    card.innerHTML = `
+      <img class="shop-photo egg-photo" src="${s.photo}" alt="" decoding="async">
     `;
   } else {
     const dishesHTML = s.dishes.map(d =>
@@ -1113,7 +1166,18 @@ function randomSpin() {
     if (step >= steps) {
       clearInterval(spinTimer);
 
-      const finalIdx = restaurantIndices[Math.floor(Math.random() * restaurantIndices.length)];
+      // 第 EGG_STEP 次随机 → 强制锁定彩蛋卡（前提是它还没被抽中过）
+      const isEggTurn = eggIdx >= 0 && !eggShown && (randomCount + 1) === EGG_STEP;
+      const finalIdx = isEggTurn
+        ? eggIdx
+        : restaurantIndices[Math.floor(Math.random() * restaurantIndices.length)];
+
+      if (isEggTurn) {
+        eggShown = true;
+        try { localStorage.setItem(EGG_KEY, '1'); } catch (e) {}
+        dropEgg();   // 一次性彩蛋：出现后就退出随机池
+      }
+
       idx = finalIdx;
       render(true);
       card.style.opacity = '1';
