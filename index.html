@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>SHY此生必打卡餐厅</title>
+<meta name="app-build" content="2026-10-24c">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#FF8A90">
 <!-- iOS 添加到主屏幕 -->
@@ -1114,6 +1115,9 @@ function render(instant = false) {
       card.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
     });
   }
+  // 兜底：彩蛋展示时清掉任何残留位移（若触发发生在手势拖拽中途，会留下 translateX）
+  if (eggOverride >= 0) card.style.transform = '';
+
   hideToast();
   preloadAround();
 }
@@ -1390,7 +1394,21 @@ document.getElementById('menuBtn').addEventListener('click', () => {
 // 策略为网络优先 + 离线回落（sw.js 内实现），不会缓存旧版本
 if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      reg.update();   // 每次打开都主动检查一次 sw 是否有更新
+      const sw = reg.waiting || reg.installing;
+      if (!sw) return;
+      // 新 sw 安装完成 → 静默刷新一次，确保拿到最新的 index.html（每会话仅一次，防循环）
+      sw.addEventListener('statechange', () => {
+        if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+          const KEY = 'sw_reload_v4';
+          if (!sessionStorage.getItem(KEY)) {
+            sessionStorage.setItem(KEY, '1');
+            location.reload();
+          }
+        }
+      });
+    }).catch(() => {});
   });
 }
 
