@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>SHY此生必打卡餐厅</title>
-<meta name="app-build" content="2026-10-25f">
+<meta name="app-build" content="2026-10-25g">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#FF8A90">
 <!-- iOS 添加到主屏幕 -->
@@ -1497,13 +1497,17 @@ document.getElementById('menuBtn').addEventListener('click', () => {
 });
 
 // ===================== 评论弹幕 =====================
-// 后端：腾讯云开发 CloudBase（PG 数据库 + PostgREST 接口）
-// 没填环境 ID 时自动走「仅本机」模式；填上后多人共享，网络失败自动降级本机
-const CB_ENV  = 'shy-daka-d5gfwas3b78af6750';   // 云开发环境 ID（shy-daka 体验版）
+// 后端双通道：Supabase（优先）/ 腾讯云 CloudBase（备胎），谁的配置填了用谁；都没填走「仅本机」
+// 网络失败自动静默降级本机，任何情况都不影响滑卡手感
+const SUPA_URL = '';   // 待填：Supabase Project URL，形如 https://xxxx.supabase.co
+const SUPA_KEY = '';   // 待填：anon public key（受 RLS 保护，可以放前端）
+const CB_ENV  = 'shy-daka-d5gfwas3b78af6750';   // 云开发环境 ID（免费版缺安全域名白名单，暂不可用）
 const CB_TABLE = 'comments';
-const SHARED_ON = CB_ENV.charAt(0) !== '_';   // 填了环境 ID = 多人共享
-const COMMENTS_ON = true;
 const CB_HOST = CB_ENV + '.api.tcloudbasegateway.com';
+const CLOUD_MODE = (SUPA_URL && SUPA_KEY) ? 'supa'
+                 : (CB_ENV.charAt(0) !== '_' ? 'cb' : '');
+const SHARED_ON = !!CLOUD_MODE;
+const COMMENTS_ON = true;
 
 const cmtBar   = document.getElementById('cmtBar');
 const cmtInput = document.getElementById('cmtInput');
@@ -1581,6 +1585,16 @@ async function cbAccessToken() {
 
 // 云端读取（后台调用，失败就静默降级本机）
 async function cloudFetchComments(key) {
+  if (CLOUD_MODE === 'supa') {
+    const qs = 'select=text,created_at'
+      + '&shop_key=eq.' + encodeURIComponent(key)
+      + '&order=created_at.desc&limit=40';
+    const r = await fetch(SUPA_URL + '/rest/v1/comments?' + qs, {
+      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY, 'Accept': 'application/json' }
+    });
+    if (!r.ok) throw new Error('supa read ' + r.status);
+    return await r.json();
+  }
   const token = await cbAccessToken();
   const qs = 'select=text,created_at'
     + '&shop_key=eq.' + encodeURIComponent(key)
@@ -1595,6 +1609,20 @@ async function cloudFetchComments(key) {
 
 // 云端写入（后台调用，失败不影响本地弹幕）
 async function cloudPostComment(key, text) {
+  if (CLOUD_MODE === 'supa') {
+    const r = await fetch(SUPA_URL + '/rest/v1/comments', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + SUPA_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ shop_key: key, text: text })
+    });
+    if (!r.ok) throw new Error('supa write ' + r.status);
+    return;
+  }
   const token = await cbAccessToken();
   const r = await fetch('https://' + CB_HOST + '/v1/rdb/rest/' + CB_TABLE, {
     method: 'POST',
