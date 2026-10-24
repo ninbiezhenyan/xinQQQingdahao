@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>SHY此生必打卡餐厅</title>
-<meta name="app-build" content="2026-10-25h">
+<meta name="app-build" content="2026-10-25i">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#FF8A90">
 <!-- iOS 添加到主屏幕 -->
@@ -1499,8 +1499,8 @@ document.getElementById('menuBtn').addEventListener('click', () => {
 // ===================== 评论弹幕 =====================
 // 后端双通道：Supabase（优先）/ 腾讯云 CloudBase（备胎），谁的配置填了用谁；都没填走「仅本机」
 // 网络失败自动静默降级本机，任何情况都不影响滑卡手感
-const SUPA_URL = 'https://cyofjpsstesxjbnasfuz.supabase.co';   // Supabase Project URL
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5b2ZqcHNzdGVzeGpibmFzZnV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4NTQ0OTIsImV4cCI6MjEwODQzMDQ5Mn0.7WmnwbC0J7EAS-GFOLPhCBEt4qFE2E-fkk4OlE85RlI';   // anon public key（受 RLS 保护，可以放前端）
+const SUPA_URL = 'https://hvzkjstnfkygmyomlliu.supabase.co';   // Supabase Project URL（韩国节点）
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2emtqc3RuZmt5Z215b21sbGl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4NTUxMDAsImV4cCI6MjEwODQzMTEwMH0.agPjMqEK4_pK4s5xwgxeA8DuCWhg224F6fNdSPN6cb4';   // anon public key（受 RLS 保护，可以放前端）
 const SUPA_SHOP_COL = 'shop';   // Supabase 表里的店铺列名（这项目是 shop）
 const CB_ENV  = 'shy-daka-d5gfwas3b78af6750';   // 云开发环境 ID（免费版缺安全域名白名单，暂不可用）
 const CB_TABLE = 'comments';
