@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>SHY此生必打卡餐厅</title>
-<meta name="app-build" content="2026-10-25j">
+<meta name="app-build" content="2026-10-25k">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#FF8A90">
 <!-- iOS 添加到主屏幕 -->
@@ -1517,6 +1517,22 @@ const danmuTrack = document.getElementById('danmuTrack');
 
 if (cmtInput && !SHARED_ON) cmtInput.placeholder = '说点什么…（仅自己可见）';
 
+// 一次性自愈：清掉早期联调时写入的「自检 xx:xx:xx」测试评论（只影响本机缓存）
+// （这里直接用字面量 key，避免引用后面才声明的常量）
+(function purgeTestData() {
+  try {
+    const KEY = 'shy_comments_v2';
+    const all = JSON.parse(localStorage.getItem(KEY) || '{}');
+    let changed = false;
+    Object.keys(all).forEach(function (k) {
+      const arr = all[k] || [];
+      const kept = arr.filter(function (c) { return !/^\s*自检\s*\d{1,2}:\d{2}/.test(c.text || ''); });
+      if (kept.length !== arr.length) { all[k] = kept; changed = true; }
+    });
+    if (changed) localStorage.setItem(KEY, JSON.stringify(all));
+  } catch (e) {}
+})();
+
 const commentCache = {};   // { shopKey: [{text, nick}] }
 let curShopKey = '';
 const DANMU_GAP = 2;    // 相邻两条弹幕之间的额外间隔（秒）
@@ -1655,7 +1671,10 @@ async function cloudSync(key) {
     if (!Array.isArray(rows) || !rows.length) return;
     const fresh = rows.map(function (row) {
       return { t: row.created_at ? Math.floor(new Date(row.created_at).getTime() / 1000) : 0, text: row.text || '' };
-    }).filter(function (c) { return c.text; });
+    }).filter(function (c) {
+      // 过滤空内容，以及联调遗留的「自检 xx:xx:xx」测试数据
+      return c.text && !/^\s*自检\s*\d{1,2}:\d{2}/.test(c.text);
+    });
     const cur = commentCache[key] || [];
     const known = {};
     cur.forEach(function (c) { known[dedupeKey(c)] = 1; });
