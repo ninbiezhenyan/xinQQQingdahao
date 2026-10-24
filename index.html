@@ -384,11 +384,82 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 12px;
+    padding: 0 14px;
     padding-bottom: env(safe-area-inset-bottom);
     z-index: 100;
     transition: opacity 0.3s;
   }
   .actions.hidden { opacity: 0; pointer-events: none; }
+
+  /* ===== 评论条 ===== */
+  .cmt-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    max-width: 420px;
+    height: 48px;
+    padding: 0 6px 0 16px;
+    background: #FFF5F6;
+    border: 1px solid #FFE0E3;
+    border-radius: 24px;
+  }
+  .cmt-input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 14px;
+    color: #7A5555;
+    font-family: inherit;
+  }
+  .cmt-input::placeholder { color: #D8AAAA; }
+  .cmt-send {
+    flex-shrink: 0;
+    height: 36px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 18px;
+    background: #FF8A90;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform 0.12s, opacity 0.2s;
+  }
+  .cmt-send:active { transform: scale(0.92); }
+  .cmt-send:disabled { opacity: 0.45; }
+
+  /* ===== 弹幕轨道 ===== */
+  .danmu-track {
+    position: absolute;
+    left: 0; right: 0; bottom: 8px;
+    height: 34px;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 60;
+  }
+  .danmu-item {
+    position: absolute;
+    top: 4px;
+    left: 100%;
+    white-space: nowrap;
+    font-size: 14px;
+    font-weight: 600;
+    color: #FF4458;
+    background: rgba(255,255,255,0.88);
+    border: 1px solid #FFE0E3;
+    border-radius: 14px;
+    padding: 3px 12px;
+    box-shadow: 0 2px 8px rgba(255,68,88,0.10);
+    animation: danmuMove linear forwards;
+  }
+  @keyframes danmuMove {
+    to { transform: translateX(calc(-100vw - 100%)); }
+  }
 
   .action-btn {
     width: 56px; height: 56px;
@@ -475,6 +546,8 @@
     <div class="card" id="card"></div>
     <div class="toast" id="toast"></div>
   </div>
+  <!-- 弹幕轨道：卡片下方外围，从右向左飘 -->
+  <div class="danmu-track" id="danmuTrack"></div>
 </div>
 
 <!-- 骰子按钮 -->
@@ -482,8 +555,12 @@
   <span class="dice-icon">🎲</span> 随 机
 </div>
 
-<!-- 底部操作栏（心仪版） -->
+<!-- 底部操作栏（心仪版）：评论条 + 导航 -->
 <div class="actions" id="actionsBar">
+  <div class="cmt-bar" id="cmtBar">
+    <input class="cmt-input" id="cmtInput" maxlength="60" placeholder="说点什么…" autocomplete="off">
+    <button class="cmt-send" id="cmtSend">发射</button>
+  </div>
   <div class="action-btn" id="btnNav">📍</div>
 </div>
 
@@ -1118,6 +1195,8 @@ function render(instant = false) {
   // 兜底：彩蛋展示时清掉任何残留位移（若触发发生在手势拖拽中途，会留下 translateX）
   if (eggOverride >= 0) card.style.transform = '';
 
+  updateComments(s);   // 切换卡片时刷新该店评论弹幕
+
   hideToast();
   preloadAround();
 }
@@ -1388,6 +1467,131 @@ btnNav.addEventListener('click', () => {
 document.getElementById('menuBtn').addEventListener('click', () => {
   alert('🍽️ SHY此生必打卡餐厅\n共 ' + total + ' 张卡片\n心仪版：左右滑动浏览\n随心版：点击随机帮你选');
 });
+
+// ===================== 评论弹幕 =====================
+// 数据存 Supabase（免费后端），按餐厅分开；评论从卡片下方由右向左飘过
+const SUPA_URL = '__SUPA_URL__';   // 待填入：Supabase Project URL
+const SUPA_KEY = '__SUPA_KEY__';   // 待填入：anon public key
+const COMMENTS_ON = SUPA_URL.charAt(0) !== '_';
+
+const cmtBar   = document.getElementById('cmtBar');
+const cmtInput = document.getElementById('cmtInput');
+const cmtSend  = document.getElementById('cmtSend');
+const danmuTrack = document.getElementById('danmuTrack');
+
+const commentCache = {};   // { shopKey: [{text, nick}] }
+let curShopKey = '';
+let danmuPool = [];
+let danmuPos = 0;
+let danmuTimer = null;
+
+// 餐厅标识：用图片编号（shop_21），彩蛋卡/分类卡不参与评论
+function shopKeyOf(s) {
+  if (!s || s.type !== 'restaurant' || s.egg) return '';
+  const m = (s.photo || '').match(/shop_\d+/);
+  return m ? m[0] : s.name;
+}
+
+function myNick() {
+  let n = '';
+  try { n = localStorage.getItem('shy_nick') || ''; } catch (e) {}
+  if (!n) {
+    n = '食客' + Math.floor(1000 + Math.random() * 9000);
+    try { localStorage.setItem('shy_nick', n); } catch (e) {}
+  }
+  return n;
+}
+
+async function fetchComments(key) {
+  if (!COMMENTS_ON || !key) return [];
+  try {
+    const r = await fetch(
+      `${SUPA_URL}/rest/v1/comments?select=text,nick&shop=eq.${encodeURIComponent(key)}&order=created_at.desc&limit=40`,
+      { headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY } }
+    );
+    return r.ok ? await r.json() : [];
+  } catch (e) { return []; }
+}
+
+async function postComment(key, text) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/comments`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPA_KEY,
+      Authorization: 'Bearer ' + SUPA_KEY,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal'
+    },
+    body: JSON.stringify({ shop: key, text: text, nick: myNick() })
+  });
+  if (!r.ok) throw new Error('post failed');
+}
+
+// 发射一条弹幕（textContent 插入，避免 XSS）
+function fireDanmu(text, nick, immediate) {
+  const el = document.createElement('div');
+  el.className = 'danmu-item';
+  el.textContent = (nick ? nick + '：' : '') + text;
+  const dur = Math.max(9, Math.min(18, 9 + text.length * 0.3));
+  el.style.animationDuration = dur + 's';
+  el.style.top = (immediate ? 4 : (Math.random() < 0.5 ? 2 : 12)) + 'px';
+  el.addEventListener('animationend', () => el.remove());
+  danmuTrack.appendChild(el);
+}
+
+function stopDanmuLoop() {
+  if (danmuTimer) { clearTimeout(danmuTimer); danmuTimer = null; }
+}
+
+function startDanmuLoop() {
+  stopDanmuLoop();
+  if (!danmuPool.length) return;
+  const item = danmuPool[danmuPos % danmuPool.length];
+  danmuPos = (danmuPos + 1) % danmuPool.length;
+  if (item) fireDanmu(item.text, item.nick, false);
+  danmuTimer = setTimeout(startDanmuLoop, 3400);
+}
+
+// 切换卡片时刷新该店的评论
+async function updateComments(s) {
+  // 未配置后端时保持原样：不显示评论条、不飘弹幕
+  if (!COMMENTS_ON) { cmtBar.style.visibility = 'hidden'; return; }
+  const key = (mode === 'xinyi') ? shopKeyOf(s) : '';
+  cmtBar.style.visibility = key ? 'visible' : 'hidden';
+  if (key === curShopKey) return;
+  curShopKey = key;
+  stopDanmuLoop();
+  danmuTrack.innerHTML = '';
+  danmuPos = 0;
+  if (!key) { danmuPool = []; return; }
+  if (!(key in commentCache)) commentCache[key] = await fetchComments(key);
+  danmuPool = (commentCache[key] || []).slice(0, 30).reverse();  // 由旧到新
+  startDanmuLoop();
+}
+
+async function sendComment() {
+  const text = cmtInput.value.trim();
+  if (!text) return;
+  if (!COMMENTS_ON) { showToast('评论功能未开启'); return; }
+  if (!curShopKey) { showToast('先选一家餐厅吧'); return; }
+  cmtSend.disabled = true;
+  try {
+    await postComment(curShopKey, text);
+    cmtInput.value = '';
+    const item = { text: text, nick: '我' };
+    commentCache[curShopKey] = (commentCache[curShopKey] || []).concat([item]);
+    danmuPool = danmuPool.concat([item]);
+    fireDanmu(text, '我', true);          // 立刻飘一次
+    if (!danmuTimer) startDanmuLoop();     // 池子原本为空时把循环拉起来
+    showToast('已发射 🚀');
+  } catch (e) {
+    showToast('发送失败，稍后再试');
+  }
+  cmtSend.disabled = false;
+}
+
+cmtSend.addEventListener('click', sendComment);
+cmtInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendComment(); });
 
 // ===== Service Worker =====
 // 目的：满足 PWA「可安装」条件，让 Edge/Chrome 出现「安装」选项 → 生成无浏览器角标的独立桌面图标
