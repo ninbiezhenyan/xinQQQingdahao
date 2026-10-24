@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>SHY此生必打卡餐厅</title>
-<meta name="app-build" content="2026-10-25k">
+<meta name="app-build" content="2026-10-25m">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#FF8A90">
 <!-- iOS 添加到主屏幕 -->
@@ -455,18 +455,18 @@
   .cmt-send:active { transform: scale(0.92); }
   .cmt-send:disabled { opacity: 0.45; }
 
-  /* ===== 弹幕轨道 ===== */
+  /* ===== 弹幕轨道：3 行并行，随机分配 ===== */
   .danmu-track {
     position: absolute;
-    left: 0; right: 0; bottom: 6px;
-    height: 28px;
+    left: 0; right: 0; bottom: 40px;   /* 抬到评论条之上，不遮挡输入框 */
+    height: 54px;                      /* 3 行 × 18px */
     overflow: hidden;
     pointer-events: none;
     z-index: 60;
   }
   .danmu-item {
     position: absolute;
-    top: 2px;
+    top: 0;                            /* 具体行号由 JS 写 inline top 决定 */
     left: 100%;
     white-space: nowrap;
     font-size: 10px;           /* 原 14px，按需求缩小 */
@@ -1536,9 +1536,12 @@ if (cmtInput && !SHARED_ON) cmtInput.placeholder = '说点什么…（仅自己�
 const commentCache = {};   // { shopKey: [{text, nick}] }
 let curShopKey = '';
 const DANMU_GAP = 2;    // 相邻两条弹幕之间的额外间隔（秒）
+const DANMU_ROWS = 3;   // 并行轨道行数
+const DANMU_ROW_H = 18; // 单行高度（px，需与 CSS .danmu-track 高度一致：3×18=54）
 let danmuLoop = [];     // 当前餐厅的循环播放列表，飘完一轮从头再来
 let danmuIdx = 0;       // 播到第几条
 let danmuTimer = null;
+let laneFree = [0, 0, 0];   // 每条轨道何时空出来（时间戳 ms）
 
 // 餐厅标识：用图片编号（shop_21），彩蛋卡/分类卡不参与评论
 function shopKeyOf(s) {
@@ -1693,7 +1696,7 @@ async function cloudSync(key) {
     const known2 = {};
     danmuLoop.forEach(function (c) { known2[dedupeKey(c)] = 1; });
     danmuLoop = danmuLoop.concat(add.filter(function (c) { return !known2[dedupeKey(c)]; }).slice(0, 20));
-    if (!danmuBusy()) danmuStep();
+    if (!danmuTimer) danmuStep();   // 调度器停了（此前列表为空）就重启
   } catch (e) {
     // 网络慢/失败：什么都不做，继续用本机数据
   }
@@ -1709,11 +1712,12 @@ async function postComment(key, text) {
   cloudPostComment(key, text).catch(function () {});
 }
 
-// 发射一条弹幕（textContent 插入，避免 XSS）；不显示昵称
-function fireDanmu(text, immediate) {
+// 发射一条弹幕（textContent 插入，避免 XSS）；不显示昵称；row 为轨道行号（0 起）
+function fireDanmu(text, row) {
   const el = document.createElement('div');
   el.className = 'danmu-item';
   el.textContent = text;
+  el.style.top = (row * DANMU_ROW_H) + 'px';
   const dur = Math.max(9, Math.min(18, 9 + text.length * 0.3));
   el.style.animationDuration = dur + 's';
   el.addEventListener('animationend', () => el.remove());
@@ -1725,14 +1729,41 @@ function stopDanmuLoop() {
   if (danmuTimer) { clearTimeout(danmuTimer); danmuTimer = null; }
 }
 
-// 同一时刻只有一条在飘；飘完按 DANMU_GAP 间隔放下一条，一轮结束后从头循环
+// 挑一条当前空闲的轨道（随机），装满则返回 -1
+function pickFreeLane() {
+  const now = Date.now();
+  const free = [];
+  for (let i = 0; i < DANMU_ROWS; i++) {
+    if (laneFree[i] <= now) free.push(i);
+  }
+  if (!free.length) return -1;
+  return free[Math.floor(Math.random() * free.length)];
+}
+
+// 立刻发射一条（占用一条空闲轨道），返回时长；没有空闲轨道返回 0
+function fireNow(text) {
+  const lane = pickFreeLane();
+  if (lane < 0) return 0;
+  const dur = fireDanmu(text, lane);
+  laneFree[lane] = Date.now() + dur * 1000;
+  return dur;
+}
+
+// 排下一条：每 DANMU_GAP 秒放一条，随机落到空闲轨道；三条都占着就等最早那条飘完
 function danmuStep() {
   stopDanmuLoop();
   if (!danmuLoop.length) return;
+  const now = Date.now();
+  let soonest = Infinity;
+  for (let i = 0; i < DANMU_ROWS; i++) soonest = Math.min(soonest, laneFree[i]);
+  if (soonest > now) {                       // 三条轨道都还在飘
+    danmuTimer = setTimeout(danmuStep, Math.max(300, soonest - now + 150));
+    return;
+  }
   const item = danmuLoop[danmuIdx % danmuLoop.length];
   danmuIdx++;
-  const wait = fireDanmu(item.text, false) + 1.0 + DANMU_GAP;
-  danmuTimer = setTimeout(danmuStep, wait * 1000);
+  fireNow(item.text);
+  danmuTimer = setTimeout(danmuStep, DANMU_GAP * 1000);
 }
 
 // 当前屏幕上是否已有弹幕在飘
@@ -1747,6 +1778,7 @@ async function updateComments(s) {
   curShopKey = key;
   stopDanmuLoop();
   danmuTrack.innerHTML = '';
+  laneFree = [0, 0, 0];              // 换店：三条轨道全部释放
   if (!key) { danmuLoop = []; danmuIdx = 0; return; }
   if (!(key in commentCache)) commentCache[key] = await fetchComments(key);
   danmuLoop = (commentCache[key] || []).slice(0, 30).reverse();   // 由旧到新
@@ -1766,15 +1798,15 @@ async function sendComment() {
     cmtInput.value = '';
     const item = { t: Math.floor(Date.now() / 1000), text: text };
     commentCache[curShopKey] = (commentCache[curShopKey] || []).concat([item]);
-    // 立即飘当前这条，同时把它加入循环列表，之后会跟着循环再飘
+    // 立刻飘当前这条（随机落空闲轨道），同时加入循环列表，之后跟着再飘
     danmuLoop.push(item);
-    if (danmuBusy()) {
-      // 屏幕上还有弹幕在飘，这条已入列，等这一条飘完自然轮到它
-    } else {
+    const dur = fireNow(text);
+    if (dur) {
       stopDanmuLoop();
-      danmuIdx = danmuLoop.length;   // 播完这条回到列表开头，继续循环
-      const wait = fireDanmu(text, false) + 1.0 + DANMU_GAP;
-      danmuTimer = setTimeout(danmuStep, wait * 1000);
+      danmuTimer = setTimeout(danmuStep, DANMU_GAP * 1000);
+    } else if (!danmuTimer) {
+      // 三条轨道都占着：交给调度器排队，等空出一条就轮到它
+      danmuTimer = setTimeout(danmuStep, 500);
     }
     showToast('已发射 🚀');
   } catch (e) {
