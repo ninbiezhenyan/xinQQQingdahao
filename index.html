@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>SHY此生必打卡餐厅</title>
-<meta name="app-build" content="2026-10-25g">
+<meta name="app-build" content="2026-10-25h">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#FF8A90">
 <!-- iOS 添加到主屏幕 -->
@@ -1499,8 +1499,9 @@ document.getElementById('menuBtn').addEventListener('click', () => {
 // ===================== 评论弹幕 =====================
 // 后端双通道：Supabase（优先）/ 腾讯云 CloudBase（备胎），谁的配置填了用谁；都没填走「仅本机」
 // 网络失败自动静默降级本机，任何情况都不影响滑卡手感
-const SUPA_URL = '';   // 待填：Supabase Project URL，形如 https://xxxx.supabase.co
-const SUPA_KEY = '';   // 待填：anon public key（受 RLS 保护，可以放前端）
+const SUPA_URL = 'https://cyofjpsstesxjbnasfuz.supabase.co';   // Supabase Project URL
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5b2ZqcHNzdGVzeGpibmFzZnV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4NTQ0OTIsImV4cCI6MjEwODQzMDQ5Mn0.7WmnwbC0J7EAS-GFOLPhCBEt4qFE2E-fkk4OlE85RlI';   // anon public key（受 RLS 保护，可以放前端）
+const SUPA_SHOP_COL = 'shop';   // Supabase 表里的店铺列名（这项目是 shop）
 const CB_ENV  = 'shy-daka-d5gfwas3b78af6750';   // 云开发环境 ID（免费版缺安全域名白名单，暂不可用）
 const CB_TABLE = 'comments';
 const CB_HOST = CB_ENV + '.api.tcloudbasegateway.com';
@@ -1587,7 +1588,7 @@ async function cbAccessToken() {
 async function cloudFetchComments(key) {
   if (CLOUD_MODE === 'supa') {
     const qs = 'select=text,created_at'
-      + '&shop_key=eq.' + encodeURIComponent(key)
+      + '&' + SUPA_SHOP_COL + '=eq.' + encodeURIComponent(key)
       + '&order=created_at.desc&limit=40';
     const r = await fetch(SUPA_URL + '/rest/v1/comments?' + qs, {
       headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY, 'Accept': 'application/json' }
@@ -1610,6 +1611,8 @@ async function cloudFetchComments(key) {
 // 云端写入（后台调用，失败不影响本地弹幕）
 async function cloudPostComment(key, text) {
   if (CLOUD_MODE === 'supa') {
+    const body = { text: text };
+    body[SUPA_SHOP_COL] = key;
     const r = await fetch(SUPA_URL + '/rest/v1/comments', {
       method: 'POST',
       headers: {
@@ -1618,7 +1621,7 @@ async function cloudPostComment(key, text) {
         'Content-Type': 'application/json',
         'Prefer': 'return=minimal'
       },
-      body: JSON.stringify({ shop_key: key, text: text })
+      body: JSON.stringify(body)
     });
     if (!r.ok) throw new Error('supa write ' + r.status);
     return;
