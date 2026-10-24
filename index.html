@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>SHY此生必打卡餐厅</title>
-<meta name="app-build" content="2026-10-25e">
+<meta name="app-build" content="2026-10-25f">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#FF8A90">
 <!-- iOS 添加到主屏幕 -->
@@ -1546,6 +1546,15 @@ function localSave(all) {
 function dedupeKey(c) { return String(c.t || 0) + '|' + c.text; }
 
 // ---------- CloudBase：匿名登录拿 token（缓存在 sessionStorage） ----------
+function deviceId() {
+  let id = '';
+  try { id = localStorage.getItem('shy_device_id') || ''; } catch (e) {}
+  if (!id) {
+    id = 'dev-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    try { localStorage.setItem('shy_device_id', id); } catch (e) {}
+  }
+  return id;
+}
 let cbToken = '', cbTokenExp = 0;
 async function cbAccessToken() {
   if (cbToken && Date.now() < cbTokenExp) return cbToken;
@@ -1556,7 +1565,7 @@ async function cbAccessToken() {
   } catch (e) {}
   const r = await fetch('https://' + CB_HOST + '/auth/v1/signin/anonymously', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Device-Id': deviceId() },
     body: '{}'
   });
   if (!r.ok) throw new Error('anon signin ' + r.status);
