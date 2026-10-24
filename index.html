@@ -1472,12 +1472,16 @@ document.getElementById('menuBtn').addEventListener('click', () => {
 // 数据存 Supabase（免费后端），按餐厅分开；评论从卡片下方由右向左飘过
 const SUPA_URL = '__SUPA_URL__';   // 待填入：Supabase Project URL
 const SUPA_KEY = '__SUPA_KEY__';   // 待填入：anon public key
-const COMMENTS_ON = SUPA_URL.charAt(0) !== '_';
+const SHARED_ON = SUPA_URL.charAt(0) !== '_';   // 填了 key = 多人共享；没填 = 仅存本机
+const COMMENTS_ON = true;
 
 const cmtBar   = document.getElementById('cmtBar');
 const cmtInput = document.getElementById('cmtInput');
 const cmtSend  = document.getElementById('cmtSend');
 const danmuTrack = document.getElementById('danmuTrack');
+
+// 未配后端时提示「仅自己可见」，配上后改为「大家都能看到」
+if (cmtInput && !SHARED_ON) cmtInput.placeholder = '说点什么…（仅自己可见）';
 
 const commentCache = {};   // { shopKey: [{text, nick}] }
 let curShopKey = '';
@@ -1502,8 +1506,19 @@ function myNick() {
   return n;
 }
 
+const LS_KEY = 'shy_comments_v1';
+
+// 本机存储：{ shopKey: [{text, nick}] }
+function localAll() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch (e) { return {}; }
+}
+function localSave(all) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(all)); } catch (e) {}
+}
+
 async function fetchComments(key) {
-  if (!COMMENTS_ON || !key) return [];
+  if (!key) return [];
+  if (!SHARED_ON) return localAll()[key] || [];   // 未配后端 → 只读本机的
   try {
     const r = await fetch(
       `${SUPA_URL}/rest/v1/comments?select=text,nick&shop=eq.${encodeURIComponent(key)}&order=created_at.desc&limit=40`,
@@ -1514,6 +1529,12 @@ async function fetchComments(key) {
 }
 
 async function postComment(key, text) {
+  if (!SHARED_ON) {                       // 未配后端 → 只写本机
+    const all = localAll();
+    (all[key] = all[key] || []).push({ text: text, nick: '我' });
+    localSave(all);
+    return;
+  }
   const r = await fetch(`${SUPA_URL}/rest/v1/comments`, {
     method: 'POST',
     headers: {
@@ -1554,7 +1575,6 @@ function startDanmuLoop() {
 
 // 切换卡片时刷新该店的评论
 async function updateComments(s) {
-  // 未配置后端时保持原样：不显示评论条、不飘弹幕
   if (!COMMENTS_ON) { cmtBar.style.visibility = 'hidden'; return; }
   const key = (mode === 'xinyi') ? shopKeyOf(s) : '';
   cmtBar.style.visibility = key ? 'visible' : 'hidden';
