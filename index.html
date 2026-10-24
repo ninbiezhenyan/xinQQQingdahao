@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>SHY此生必打卡餐厅</title>
-<meta name="app-build" content="2026-10-25c">
+<meta name="app-build" content="2026-10-25d">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#FF8A90">
 <!-- iOS 添加到主屏幕 -->
@@ -1497,18 +1497,19 @@ document.getElementById('menuBtn').addEventListener('click', () => {
 });
 
 // ===================== 评论弹幕 =====================
-// 数据存 Supabase（免费后端），按餐厅分开；评论从卡片下方由右向左飘过
-const SUPA_URL = '__SUPA_URL__';   // 待填入：Supabase Project URL
-const SUPA_KEY = '__SUPA_KEY__';   // 待填入：anon public key
-const SHARED_ON = SUPA_URL.charAt(0) !== '_';   // 填了 key = 多人共享；没填 = 仅存本机
+// 后端：腾讯云开发 CloudBase（PG 数据库 + PostgREST 接口）
+// 没填环境 ID 时自动走「仅本机」模式；填上后多人共享，网络失败自动降级本机
+const CB_ENV  = '__CB_ENV__';   // 待填入：云开发环境 ID，形如 xxx-1a2b3c4d
+const CB_TABLE = 'comments';
+const SHARED_ON = CB_ENV.charAt(0) !== '_';   // 填了环境 ID = 多人共享
 const COMMENTS_ON = true;
+const CB_HOST = CB_ENV + '.api.tcloudbasegateway.com';
 
 const cmtBar   = document.getElementById('cmtBar');
 const cmtInput = document.getElementById('cmtInput');
 const cmtSend  = document.getElementById('cmtSend');
 const danmuTrack = document.getElementById('danmuTrack');
 
-// 未配后端时提示「仅自己可见」，配上后改为「大家都能看到」
 if (cmtInput && !SHARED_ON) cmtInput.placeholder = '说点什么…（仅自己可见）';
 
 const commentCache = {};   // { shopKey: [{text, nick}] }
@@ -1533,46 +1534,115 @@ function myNick() {
   return n;
 }
 
-const LS_KEY = 'shy_comments_v1';
+const LS_KEY = 'shy_comments_v2';
 
-// 本机存储：{ shopKey: [{text, nick}] }
+// 本机存储：{ shopKey: [{t, text}] }  —— 永远可用，断网也能看
 function localAll() {
   try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch (e) { return {}; }
 }
 function localSave(all) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(all)); } catch (e) {}
 }
+function dedupeKey(c) { return String(c.t || 0) + '|' + c.text; }
 
-async function fetchComments(key) {
-  if (!key) return [];
-  if (!SHARED_ON) return localAll()[key] || [];   // 未配后端 → 只读本机的
+// ---------- CloudBase：匿名登录拿 token（缓存在 sessionStorage） ----------
+let cbToken = '', cbTokenExp = 0;
+async function cbAccessToken() {
+  if (cbToken && Date.now() < cbTokenExp) return cbToken;
   try {
-    const r = await fetch(
-      `${SUPA_URL}/rest/v1/comments?select=text,nick&shop=eq.${encodeURIComponent(key)}&order=created_at.desc&limit=40`,
-      { headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY } }
-    );
-    return r.ok ? await r.json() : [];
-  } catch (e) { return []; }
+    const t = sessionStorage.getItem('cb_token') || '';
+    const e = parseInt(sessionStorage.getItem('cb_token_exp') || '0', 10);
+    if (t && Date.now() < e) { cbToken = t; cbTokenExp = e; return t; }
+  } catch (e) {}
+  const r = await fetch('https://' + CB_HOST + '/auth/v1/signin/anonymously', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: '{}'
+  });
+  if (!r.ok) throw new Error('anon signin ' + r.status);
+  const j = await r.json();
+  cbToken = j.access_token || '';
+  cbTokenExp = Date.now() + Math.max(60, (parseInt(j.expires_in, 10) || 3600) - 120) * 1000;
+  try {
+    sessionStorage.setItem('cb_token', cbToken);
+    sessionStorage.setItem('cb_token_exp', String(cbTokenExp));
+  } catch (e) {}
+  return cbToken;
 }
 
-async function postComment(key, text) {
-  if (!SHARED_ON) {                       // 未配后端 → 只写本机
-    const all = localAll();
-    (all[key] = all[key] || []).push({ text: text, nick: '我' });
-    localSave(all);
-    return;
-  }
-  const r = await fetch(`${SUPA_URL}/rest/v1/comments`, {
+// 云端读取（后台调用，失败就静默降级本机）
+async function cloudFetchComments(key) {
+  const token = await cbAccessToken();
+  const qs = 'select=text,created_at'
+    + '&shop_key=eq.' + encodeURIComponent(key)
+    + '&order=created_at.desc'
+    + '&limit=40';
+  const r = await fetch('https://' + CB_HOST + '/v1/rdb/rest/' + CB_TABLE + '?' + qs, {
+    headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
+  });
+  if (!r.ok) throw new Error('cloud read ' + r.status);
+  return await r.json();
+}
+
+// 云端写入（后台调用，失败不影响本地弹幕）
+async function cloudPostComment(key, text) {
+  const token = await cbAccessToken();
+  const r = await fetch('https://' + CB_HOST + '/v1/rdb/rest/' + CB_TABLE, {
     method: 'POST',
     headers: {
-      apikey: SUPA_KEY,
-      Authorization: 'Bearer ' + SUPA_KEY,
+      'Authorization': 'Bearer ' + token,
       'Content-Type': 'application/json',
-      Prefer: 'return=minimal'
+      'Prefer': 'return=minimal'
     },
-    body: JSON.stringify({ shop: key, text: text, nick: myNick() })
+    body: JSON.stringify({ shop_key: key, text: text })
   });
-  if (!r.ok) throw new Error('post failed');
+  if (!r.ok) throw new Error('cloud write ' + r.status);
+}
+
+// 本机优先：先给本机数据，云端在后台补
+async function fetchComments(key) {
+  if (!key) return [];
+  return localAll()[key] || [];
+}
+
+// 后台合并云端评论：只把本机没有的追加进队列
+async function cloudSync(key) {
+  if (!SHARED_ON || !key) return;
+  try {
+    const rows = await cloudFetchComments(key);
+    if (!Array.isArray(rows) || !rows.length) return;
+    const fresh = rows.map(function (row) {
+      return { t: row.created_at ? Math.floor(new Date(row.created_at).getTime() / 1000) : 0, text: row.text || '' };
+    }).filter(function (c) { return c.text; });
+    const cur = commentCache[key] || [];
+    const known = {};
+    cur.forEach(function (c) { known[dedupeKey(c)] = 1; });
+    const add = fresh.filter(function (c) { return !known[dedupeKey(c)]; });
+    if (!add.length) return;
+    commentCache[key] = cur.concat(add);
+    // 云端数据写回本机，下次断网也能看
+    const all = localAll();
+    const merged = (all[key] || []).concat(add);
+    const seen = {}, uniq = [];
+    merged.forEach(function (c) { const k = dedupeKey(c); if (!seen[k]) { seen[k] = 1; uniq.push(c); } });
+    all[key] = uniq;
+    localSave(all);
+    if (curShopKey !== key) return;
+    danmuQueue = danmuQueue.concat(add.slice(0, 20));
+    if (!danmuBusy()) danmuStep();
+  } catch (e) {
+    // 网络慢/失败：什么都不做，继续用本机数据
+  }
+}
+
+// 发送：先落本机 + 立刻飘，云端后台补
+async function postComment(key, text) {
+  const item = { t: Math.floor(Date.now() / 1000), text: text };
+  const all = localAll();
+  (all[key] = all[key] || []).push(item);
+  localSave(all);
+  if (!SHARED_ON) return;
+  cloudPostComment(key, text).catch(function () {});
 }
 
 // 发射一条弹幕（textContent 插入，避免 XSS）；不显示昵称
@@ -1616,6 +1686,7 @@ async function updateComments(s) {
   if (!(key in commentCache)) commentCache[key] = await fetchComments(key);
   danmuQueue = (commentCache[key] || []).slice(0, 30).reverse();   // 由旧到新
   danmuStep();
+  cloudSync(key);   // 后台补云端，不会拖慢滑卡
 }
 
 async function sendComment() {
@@ -1627,7 +1698,7 @@ async function sendComment() {
   try {
     await postComment(curShopKey, text);
     cmtInput.value = '';
-    const item = { text: text, nick: '我' };
+    const item = { t: Math.floor(Date.now() / 1000), text: text };
     commentCache[curShopKey] = (commentCache[curShopKey] || []).concat([item]);
     // 屏幕上正在飘别的弹幕时排队，避免同时出现多条
     if (danmuBusy()) {
