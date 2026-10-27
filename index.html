@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>SHY此生必打卡餐厅</title>
-<meta name="app-build" content="2026-10-25m">
+<meta name="app-build" content="2026-10-27a">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#FF8A90">
 <!-- iOS 添加到主屏幕 -->
@@ -1517,19 +1517,25 @@ const danmuTrack = document.getElementById('danmuTrack');
 
 if (cmtInput && !SHARED_ON) cmtInput.placeholder = '说点什么…（仅自己可见）';
 
-// 一次性自愈：清掉早期联调时写入的「自检 xx:xx:xx」测试评论（只影响本机缓存）
+// 测试/垃圾评论识别：含「自检」二字一律丢弃（联调遗留数据，云端删不掉只能前端屏蔽）
+function isJunkText(s) { return /自检/.test(String(s || '')); }
+
+// 一次性自愈：清掉本机缓存里的测试评论（v1 / v2 两个 key 都清）
 // （这里直接用字面量 key，避免引用后面才声明的常量）
 (function purgeTestData() {
   try {
-    const KEY = 'shy_comments_v2';
-    const all = JSON.parse(localStorage.getItem(KEY) || '{}');
-    let changed = false;
-    Object.keys(all).forEach(function (k) {
-      const arr = all[k] || [];
-      const kept = arr.filter(function (c) { return !/^\s*自检\s*\d{1,2}:\d{2}/.test(c.text || ''); });
-      if (kept.length !== arr.length) { all[k] = kept; changed = true; }
+    ['shy_comments_v1', 'shy_comments_v2'].forEach(function (KEY) {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return;
+      const all = JSON.parse(raw);
+      let changed = false;
+      Object.keys(all).forEach(function (k) {
+        const arr = all[k] || [];
+        const kept = arr.filter(function (c) { return !isJunkText(c && c.text); });
+        if (kept.length !== arr.length) { all[k] = kept; changed = true; }
+      });
+      if (changed) localStorage.setItem(KEY, JSON.stringify(all));
     });
-    if (changed) localStorage.setItem(KEY, JSON.stringify(all));
   } catch (e) {}
 })();
 
@@ -1663,7 +1669,8 @@ async function cloudPostComment(key, text) {
 // 本机优先：先给本机数据，云端在后台补
 async function fetchComments(key) {
   if (!key) return [];
-  return localAll()[key] || [];
+  // 最后一道防线：本机数据里若混进测试评论，读的时候就剔掉
+  return (localAll()[key] || []).filter(function (c) { return c && c.text && !isJunkText(c.text); });
 }
 
 // 后台合并云端评论：只把本机没有的追加进队列
@@ -1675,8 +1682,8 @@ async function cloudSync(key) {
     const fresh = rows.map(function (row) {
       return { t: row.created_at ? Math.floor(new Date(row.created_at).getTime() / 1000) : 0, text: row.text || '' };
     }).filter(function (c) {
-      // 过滤空内容，以及联调遗留的「自检 xx:xx:xx」测试数据
-      return c.text && !/^\s*自检\s*\d{1,2}:\d{2}/.test(c.text);
+      // 过滤空内容，以及联调遗留的测试数据（云端那条 anon 无 DELETE 权限，只能前端屏蔽）
+      return c.text && !isJunkText(c.text);
     });
     const cur = commentCache[key] || [];
     const known = {};
@@ -1712,15 +1719,31 @@ async function postComment(key, text) {
   cloudPostComment(key, text).catch(function () {});
 }
 
+// 正在屏幕上飘的弹幕：{ key, endAt } —— 用于保证同一条评论同时只出现一次
+let danmuActive = [];
+function danmuOnScreen(key) {
+  return danmuActive.some(function (a) { return a.key === key; });
+}
+function danmuEarliestEnd() {
+  let m = Infinity;
+  danmuActive.forEach(function (a) { m = Math.min(m, a.endAt); });
+  return m;
+}
+
 // 发射一条弹幕（textContent 插入，避免 XSS）；不显示昵称；row 为轨道行号（0 起）
-function fireDanmu(text, row) {
+function fireDanmu(text, row, key) {
   const el = document.createElement('div');
   el.className = 'danmu-item';
   el.textContent = text;
   el.style.top = (row * DANMU_ROW_H) + 'px';
   const dur = Math.max(9, Math.min(18, 9 + text.length * 0.3));
   el.style.animationDuration = dur + 's';
-  el.addEventListener('animationend', () => el.remove());
+  const rec = { key: key == null ? 'k:' + text : key, endAt: Date.now() + dur * 1000 };
+  danmuActive.push(rec);
+  el.addEventListener('animationend', function () {
+    el.remove();
+    danmuActive = danmuActive.filter(function (a) { return a !== rec; });
+  });
   danmuTrack.appendChild(el);
   return dur;
 }
@@ -1741,28 +1764,40 @@ function pickFreeLane() {
 }
 
 // 立刻发射一条（占用一条空闲轨道），返回时长；没有空闲轨道返回 0
-function fireNow(text) {
+function fireNow(item) {
   const lane = pickFreeLane();
   if (lane < 0) return 0;
-  const dur = fireDanmu(text, lane);
+  const dur = fireDanmu(item.text, lane, dedupeKey(item));
   laneFree[lane] = Date.now() + dur * 1000;
   return dur;
 }
 
-// 排下一条：每 DANMU_GAP 秒放一条，随机落到空闲轨道；三条都占着就等最早那条飘完
+// 排下一条：每 DANMU_GAP 秒放一条，随机落到空闲轨道
+// 关键：同一条评论在屏幕上没飘完就不重复发射（评论少时也不会三行都是同一条）
 function danmuStep() {
   stopDanmuLoop();
   if (!danmuLoop.length) return;
   const now = Date.now();
-  let soonest = Infinity;
-  for (let i = 0; i < DANMU_ROWS; i++) soonest = Math.min(soonest, laneFree[i]);
-  if (soonest > now) {                       // 三条轨道都还在飘
+  // 挑一条「当前不在屏幕上」的评论
+  let pick = -1;
+  for (let i = 0; i < danmuLoop.length; i++) {
+    const idx = (danmuIdx + i) % danmuLoop.length;
+    if (!danmuOnScreen(dedupeKey(danmuLoop[idx]))) { pick = idx; break; }
+  }
+  if (pick < 0) {
+    // 列��里的评论全都还在屏幕上：等最早那条飘完再重新挑
+    const t = danmuEarliestEnd();
+    danmuTimer = setTimeout(danmuStep, Math.max(400, (isFinite(t) ? t : now) - now + 200));
+    return;
+  }
+  danmuIdx = pick + 1;
+  if (!fireNow(danmuLoop[pick])) {
+    // 三条轨道都占着：等最早空出来
+    let soonest = Infinity;
+    for (let i = 0; i < DANMU_ROWS; i++) soonest = Math.min(soonest, laneFree[i]);
     danmuTimer = setTimeout(danmuStep, Math.max(300, soonest - now + 150));
     return;
   }
-  const item = danmuLoop[danmuIdx % danmuLoop.length];
-  danmuIdx++;
-  fireNow(item.text);
   danmuTimer = setTimeout(danmuStep, DANMU_GAP * 1000);
 }
 
@@ -1779,9 +1814,12 @@ async function updateComments(s) {
   stopDanmuLoop();
   danmuTrack.innerHTML = '';
   laneFree = [0, 0, 0];              // 换店：三条轨道全部释放
+  danmuActive = [];                  // 屏幕上的弹幕一并清空
   if (!key) { danmuLoop = []; danmuIdx = 0; return; }
   if (!(key in commentCache)) commentCache[key] = await fetchComments(key);
-  danmuLoop = (commentCache[key] || []).slice(0, 30).reverse();   // 由旧到新
+  danmuLoop = (commentCache[key] || [])
+    .filter(function (c) { return c && c.text && !isJunkText(c.text); })
+    .slice(0, 30).reverse();         // 由旧到新
   danmuIdx = 0;
   danmuStep();
   cloudSync(key);   // 后台补云端，不会拖慢滑卡
@@ -1800,7 +1838,8 @@ async function sendComment() {
     commentCache[curShopKey] = (commentCache[curShopKey] || []).concat([item]);
     // 立刻飘当前这条（随机落空闲轨道），同时加入循环列表，之后跟着再飘
     danmuLoop.push(item);
-    const dur = fireNow(text);
+    // 这条已经在屏幕上飘着就不再发第二次
+    const dur = danmuOnScreen(dedupeKey(item)) ? 0 : fireNow(item);
     if (dur) {
       stopDanmuLoop();
       danmuTimer = setTimeout(danmuStep, DANMU_GAP * 1000);
