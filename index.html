@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>SHY此生必打卡餐厅</title>
-<meta name="app-build" content="2026-10-28a">
+<meta name="app-build" content="2026-10-28b">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#FF8A90">
 <!-- iOS 添加到主屏幕 -->
@@ -1055,9 +1055,11 @@ slides.forEach((s, i) => {
 
 // ===================== 过滤状态 =====================
 let currentCategory = '全部';
-let filteredSlides = [...slides];
-let filteredTotal = slides.length;
-let filteredRestaurantIndices = [...restaurantIndices];
+// 下面三个变量统一由 buildFiltered()/rebuildRestaurantIndices() 填充，
+// 启动时也要走一遍 —— 否则默认状态下心仪版会一路滑到末尾的彩蛋卡
+let filteredSlides = [];
+let filteredTotal = 0;
+let filteredRestaurantIndices = [];
 
 function buildFiltered(catName) {
   if (catName === '全部') {
@@ -1080,6 +1082,10 @@ function rebuildRestaurantIndices() {
     if (s.type === 'restaurant') filteredRestaurantIndices.push(i);
   });
 }
+
+// 启动时按当前分类（默认「全部」）建好卡片流，彩蛋卡只由计数触发插入，不进滑动序列
+buildFiltered(currentCategory);
+rebuildRestaurantIndices();
 
 // ===================== 分类面板 =====================
 (function initCatPanel() {
