@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>SHY此生必打卡餐厅</title>
-<meta name="app-build" content="2026-10-27a">
+<meta name="app-build" content="2026-10-28a">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#FF8A90">
 <!-- iOS 添加到主屏幕 -->
@@ -405,6 +405,9 @@
     max-height: 100%;
     min-height: 0;
   }
+  /* 随心版：全程不展示评论区与弹幕轨道 */
+  .stage.suixin .cmt-bar,
+  .stage.suixin .danmu-track { display: none; }
   /* 评论条：紧贴卡片下方，窄条居中；未出现评论时不占布局 */
   .cmt-bar {
     display: flex;
@@ -919,6 +922,25 @@ const slides = [
     addr:'', mapQuery:'',
     features:[], rating:0, egg:'egg29',
     dishes:[]
+  },
+  // ===== 彩蛋卡 3（shop_30）=====
+  // · 仅图片，无任何文字；不属于任何分类菜单
+  // · 出现频率低于前两张（心仪 26 / 随心 15）
+  { type:'restaurant', icon:'🎁', name:'彩蛋三', branch:'', tag:'', tagClass:'',
+    photo:'images/shop_30.jpg',
+    price:'', recommender:'', avatar:'', dianping:'',
+    addr:'', mapQuery:'',
+    features:[], rating:0, egg:'egg30',
+    dishes:[]
+  },
+  // ===== 彩蛋卡 4（shop_31）=====
+  // · 出现频率低于前两张（心仪 33 / 随心 21）
+  { type:'restaurant', icon:'🎁', name:'彩蛋四', branch:'', tag:'', tagClass:'',
+    photo:'images/shop_31.jpg',
+    price:'', recommender:'', avatar:'', dianping:'',
+    addr:'', mapQuery:'',
+    features:[], rating:0, egg:'egg31',
+    dishes:[]
   }
 ];
 
@@ -929,7 +951,9 @@ const slides = [
 // 命中后该彩蛋的计数器归零、重新开始计算；刷新/重开页面同样从 0 起算
 const EGGS = [
   { key: 'egg28', xinyi: 20, suixin: 5  },
-  { key: 'egg29', xinyi: 11, suixin: 11 }
+  { key: 'egg29', xinyi: 11, suixin: 11 },
+  { key: 'egg30', xinyi: 26, suixin: 15 },   // 新增两张：出现频率低于前两张
+  { key: 'egg31', xinyi: 33, suixin: 21 }
 ];
 
 // 为每张彩蛋卡建立独立状态
@@ -972,7 +996,16 @@ slides.forEach(s => {
 // 不参与「随心版」随机抽取的分类
 const NO_RANDOM_CATS = ['甜品'];
 
-const restaurantIndices = [];
+const restaurantIndices = [];       // 随机「结果」池：可含彩蛋卡（随机到了才显示）
+const spinOnlyIndices = [];         // 随机「滚动」池：只有真实餐厅，不含任何彩蛋卡
+slides.forEach((s, i) => {
+  if (s.type !== 'restaurant') return;
+  // egg 卡片无视 NO_RANDOM_CATS，强制参与随心版随机
+  const inRandom = s.egg || !NO_RANDOM_CATS.includes(slideCategory[i]);
+  if (inRandom) restaurantIndices.push(i);
+  if (inRandom && !s.egg) spinOnlyIndices.push(i);   // 滚动动画里不出现彩蛋卡
+});
+
 const featureIcons = {
   '新鲜直达':'🚚','家庭聚餐':'👥','性价比高':'💰',
   '09:30-24:00':'🕐','东北地名包厢':'🏠',
@@ -1000,10 +1033,6 @@ const featureIcons = {
   '09:00-21:00':'🕐','重庆风味':'🌶️','辣度可选':'🌡️',
   '深夜营业':'🌙','铜锅涮肉':'🍲','现炒锅气':'🔥'
 };
-slides.forEach((s, i) => {
-  // egg 卡片无视 NO_RANDOM_CATS，强制参与随心版随机
-  if (s.type === 'restaurant' && (s.egg || !NO_RANDOM_CATS.includes(slideCategory[i]))) restaurantIndices.push(i);
-});
 
 // 若网址带 ?egg=reset，则清零所有彩蛋计数（方便自己反复测试）
 try {
@@ -1329,7 +1358,9 @@ function randomSpin() {
 
   const spinTimer = setInterval(() => {
     step++;
-    idx = restaurantIndices[Math.floor(Math.random() * restaurantIndices.length)];
+    // 滚动过程只看真实餐厅 —— 彩蛋卡不参与「快速筛选」的视觉过程
+    const pool = spinOnlyIndices.length ? spinOnlyIndices : restaurantIndices;
+    idx = pool[Math.floor(Math.random() * pool.length)];
     render(true);
     card.style.transition = 'none';
     card.style.opacity = '1';
@@ -1453,6 +1484,9 @@ function switchMode(newMode) {
     b.classList.toggle('active', b.dataset.mode === mode);
   });
 
+  // 随心版整块关闭评论与弹幕（含从心仪版带过来的残留）
+  stageEl.classList.toggle('suixin', mode === 'suixin');
+
   if (mode === 'suixin') {
     card.classList.add('no-card');
     card.classList.remove('hidden');
@@ -1463,6 +1497,7 @@ function switchMode(newMode) {
     stageEl.classList.add('full');
     diceBtn.classList.add('show');
     diceBtn.classList.remove('below');
+    updateComments(null);   // 清空评论状态、停掉还在飘的弹幕
   } else {
     card.classList.remove('no-card');
     actionsBar.classList.remove('hidden');
@@ -1806,8 +1841,19 @@ function danmuBusy() { return danmuTrack.children.length > 0; }
 
 // 切换卡片时刷新该店的评论
 async function updateComments(s) {
-  if (!COMMENTS_ON) { cmtBar.style.visibility = 'hidden'; return; }
-  const key = (mode === 'xinyi') ? shopKeyOf(s) : '';
+  // 随心版：全程不展示评论区与弹幕 —— 顺手把从心仪版带过来的残留清干净
+  if (!COMMENTS_ON || mode !== 'xinyi') {
+    cmtBar.style.visibility = 'hidden';
+    curShopKey = '';
+    stopDanmuLoop();
+    danmuTrack.innerHTML = '';
+    laneFree = laneFree.map(() => 0);
+    danmuActive = [];
+    danmuLoop = [];
+    danmuIdx = 0;
+    return;
+  }
+  const key = shopKeyOf(s);
   cmtBar.style.visibility = key ? 'visible' : 'hidden';
   if (key === curShopKey) return;
   curShopKey = key;
