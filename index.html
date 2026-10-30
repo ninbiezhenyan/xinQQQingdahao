@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>SHY此生必打卡餐厅</title>
-<meta name="app-build" content="2026-10-29a">
+<meta name="app-build" content="2026-10-30a">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#FF8A90">
 <!-- iOS 添加到主屏幕 -->
@@ -287,6 +287,21 @@
     min-height: 0;
     object-fit: cover;
   }
+  /* 精简卡（美食街等无地址/推荐菜/特色标签）：图片撑满除信息条以外的全部空间，信息贴卡片最底部 */
+  .card-simple .shop-photo {
+    height: auto;
+    min-height: 0;
+    flex: 1 1 0;          /* 基准归零 → 严格吃掉「卡片高度 − 信息条」的全部剩余空间 */
+  }
+  .card-simple .shop-body {
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    overflow: visible;
+    padding: 12px 16px 14px;
+    gap: 6px;
+  }
+  .card-simple .shop-name { font-size: 20px; }
+  .card-simple .shop-rating { margin-top: 0; }
   .shop-body {
     padding: 14px 16px 16px;
     display: flex;
@@ -1232,7 +1247,9 @@ function render(instant = false) {
     const photoHTML = s.photo
       ? `<img class="shop-photo" src="${s.photo}" alt="${s.name}" decoding="async" onerror="this.style.display='none'">`
       : '';
-    card.className = 'card card-restaurant';
+    // 只有店名/星级/推荐人这类基础信息 → 走「精简卡」布局：图片撑满、信息贴底
+    const isSimple = !s.addr && !s.price && !hasMeta && !featHTML;
+    card.className = 'card card-restaurant' + (isSimple ? ' card-simple' : '');
     if (!instant) card.classList.add('hidden');
     card.offsetHeight;
     card.innerHTML = `
